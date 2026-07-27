@@ -1,0 +1,5 @@
+Title: Pokémon Dimensionality Reduction
+Description: Explore how PCA, t-SNE, and UMAP arrange Pokémon using stats, types, and egg groups.
+Categories: machine learning, visualization, dimensionality reduction
+Runtime: server
+Status: draft
