@@ -62,6 +62,8 @@ shinylive_export_catch <- function(meta) {
         meta$app,
         "docs/live",
         subdir = meta$slug,
+        wasm_packages = TRUE,
+        max_filesize = Inf,
         template_params = list(title = meta$title)
       )
 
