@@ -1,0 +1,55 @@
+name: Patch runtime dependencies
+
+on:
+  push:
+    branches: [fix-shinylive-runtime-deps]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: fix-shinylive-runtime-deps
+
+      - name: Apply dependency declarations
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def insert_after(path, anchor, line):
+              p = Path(path)
+              text = p.read_text()
+              if line in text:
+                  return
+              text = text.replace(anchor, anchor + "\n" + line, 1)
+              p.write_text(text)
+
+          insert_after("roc-curve/app.R", "library(tibble)", "library(markdown)")
+          insert_after("kmeans/app.R", "library(deldir)", "library(markdown)")
+          insert_after("logistic-regression/app.R", "library(markdown)", "library(broom)")
+
+          p = Path(".github/workflows/pages.yml")
+          text = p.read_text()
+          anchor = "            any::bslib\n" if "            any::bslib\n" in text else "            any::cli\n"
+          additions = ""
+          if "            any::broom\n" not in text:
+              additions += "            any::broom\n"
+          if "            any::markdown\n" not in text:
+              additions += "            any::markdown\n"
+          if additions:
+              text = text.replace(anchor, anchor + additions, 1)
+          p.write_text(text)
+
+          Path(".github/workflows/patch-runtime-deps.yml").unlink()
+
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Declare Shinylive runtime dependencies"
+          git push
