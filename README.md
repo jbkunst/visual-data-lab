@@ -1,6 +1,6 @@
 # Visual Data Lab
 
-Interactive experiments in data, statistics, and machine learning.
+Interactive experiments in data, statistics, machine learning, and visualization.
 
 Public site:
 
