@@ -1,0 +1,7 @@
+Error in splines::ns(debt, df = 3) : 
+  all interior knots match left boundary knot
+Calls: <Anonymous> ... <Anonymous> -> model.frame.default -> eval -> eval -> <Anonymous>
+In addition: Warning message:
+In splines::ns(assets, df = 3) :
+  shoving 'interior' knots matching boundary knots to inside
+Execution halted
