@@ -8,7 +8,7 @@ library(tibble)
 apptheme <- bs_theme(primary = "#007BC2")
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
-card <- purrr::partial(bslib::card, full_screen = TRUE)
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 # app options -------------------------------------------------------------
 mean_negative_choices <- c("-4", "-3", "-2", "-1", "-0.5", "0")
@@ -162,7 +162,6 @@ server <- function(input, output, session) {
         lapply(names(class_palette), function(observed) {
           scores <- data$score[data$observed == observed]
           estimate <- density(scores, from = min(score_grid), to = max(score_grid), n = 512)
-
           tibble(
             score = score_grid,
             observed = factor(observed, levels = names(class_palette)),
