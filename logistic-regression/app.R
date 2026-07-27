@@ -6,6 +6,7 @@ library(ggplot2)
 library(stringr)
 library(scales)
 library(markdown)
+library(broom)
 library(risk3r)       # remotes::install_github("jbkunst/risk3r", force = TRUE)
 library(klassets)     # remotes::install_github("jbkunst/klassets", force = TRUE)
 
