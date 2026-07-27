@@ -499,7 +499,7 @@ ui <- page_fillable(
         min = 1,
         max = 15,
         ticks = FALSE,
-        value = 4,
+        value = 2,
         animate = animationOptions(interval = 1000)
       ),
       
@@ -595,7 +595,7 @@ server <- function(input, output, session) {
     max_iter <- max(kmi$centers$iteration)
     is_new_simulation <- !identical(simulated_data$id, last_simulated_id())
     is_new_k <- !identical(input$k, last_k())
-    selected_iter <- ifelse(is_new_simulation || is_new_k, 1, min(input$iter, max_iter))
+    selected_iter <- ifelse(is_new_simulation || is_new_k, min(2, max_iter), min(input$iter, max_iter))
     
     updateSliderInput(
       session = session,
