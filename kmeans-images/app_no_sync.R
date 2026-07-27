@@ -24,7 +24,7 @@ apptheme <- bs_theme()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
-card <- purrr::partial(bslib::card, full_screen = TRUE)
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
  
 # app options -------------------------------------------------------------
 img_choices <- setNames(

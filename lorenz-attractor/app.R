@@ -12,7 +12,7 @@ apptheme <- bs_theme()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
-card <- purrr::partial(bslib::card, full_screen = TRUE)
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 thematic::thematic_shiny(font = "auto")
 
@@ -20,7 +20,7 @@ theme_set(theme_minimal() + theme(legend.position = "none"))
 
 # app options -------------------------------------------------------------
 generate_lorenz <- function(sigma = 10, rho = 28, beta = 8/3, 
-                            start = c(1, 1, 1), n = 1000, dt = 0.01) {
+                             start = c(1, 1, 1), n = 1000, dt = 0.01) {
   x <- y <- z <- numeric(n)
   x[1] <- start[1]
   y[1] <- start[2]
