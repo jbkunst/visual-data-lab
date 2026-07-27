@@ -60,6 +60,14 @@ Status: draft
 7. Run `source("R/build_site.R")` from the repository root.
 8. Check the generated gallery locally.
 
+Adding a new app should be self-contained in its app folder. **Do not modify `.github/workflows/pages.yml` just to add an app.** App-specific data preparation, models, assets, and other runtime files belong in the app folder and should be committed when they are part of the app.
+
+Every app `credits.md` should use the standard signature:
+
+```md
+App made by [Joshua Kunst](https://jkunst.com) with ❤️ and ☕ using Shiny for R ✨. Code [here](https://github.com/jbkunst/visual-data-lab).
+```
+
 Generate a gallery screenshot locally with:
 
 ```r
