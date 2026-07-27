@@ -43,10 +43,8 @@ jobs:
             any::glue
             any::httpuv
             any::markdown
-            any::modeldata
             any::purrr
             any::quarto
-            any::rpart
             any::shinylive
             any::stringr
             any::tibble
@@ -63,10 +61,6 @@ jobs:
           key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R') }}
           restore-keys: |
             ${{ runner.os }}-shinylive-
-
-      - name: Prepare SHAP Explorer data
-        shell: Rscript {0}
-        run: source("shap-explorer/prepare_data.R")
 
       - name: Build site
         shell: Rscript {0}
