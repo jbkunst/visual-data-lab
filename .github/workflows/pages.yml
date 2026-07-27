@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/shinylive
-          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R', '**/shinylive-deps.R') }}
+          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R') }}
           restore-keys: |
             ${{ runner.os }}-shinylive-
 
