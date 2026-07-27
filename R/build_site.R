@@ -71,6 +71,7 @@ shinylive_export_catch <- function(meta) {
         stop("Shinylive export completed, but index.html is missing.", call. = FALSE)
       }
 
+      cli::cli_alert_success("Exported {meta$app}")
       list(ok = TRUE, message = "Shinylive export completed.")
     },
     error = function(e) list(ok = FALSE, message = conditionMessage(e))
