@@ -56,10 +56,23 @@ Status: draft
 3. Fill in `DESCRIPTION`.
 4. Add `readme.md` and `credits.md`.
 5. Run the app locally and check the interaction.
-6. Run `source("R/build_site.R")` from the repository root.
-7. Check the generated gallery locally.
+6. Generate and commit `screenshot.png`.
+7. Run `source("R/build_site.R")` from the repository root.
+8. Check the generated gallery locally.
 
-The build creates `screenshot.png` only when it is missing. Delete an existing screenshot before rebuilding when a new preview is needed.
+Generate a gallery screenshot locally with:
+
+```r
+webshot2::appshot(
+  "kmeans",
+  file = "kmeans/screenshot.png",
+  delay = 3,
+  vwidth = 1440,
+  vheight = 900
+)
+```
+
+Replace `kmeans` with the app folder name. Screenshots are source assets and should be committed with the app. GitHub Actions reuses the committed screenshot during the site build.
 
 If a Shinylive app cannot be exported, the build fails. Move it to the server runtime only when there is a deliberate reason to host it on Posit Connect Cloud.
 
