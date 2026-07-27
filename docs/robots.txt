@@ -1,1 +1,0 @@
-Sitemap: https://jbkunst.github.io/visual-data-lab/sitemap.xml
