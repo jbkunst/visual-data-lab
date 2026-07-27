@@ -15,7 +15,7 @@ thematic::thematic_shiny(font = "auto")
 apptheme <- bs_theme()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
-card <- purrr::partial(bslib::card, full_screen = TRUE)
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 primary_color <- unname(bs_get_variables(apptheme, c("primary")))
 
