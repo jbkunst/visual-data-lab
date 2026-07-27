@@ -93,7 +93,12 @@ logistic <- stats::glm(
   family = stats::binomial()
 )
 
-spline_terms <- paste0("splines::ns(", predictors, ", df = 3)")
+spline_predictors <- setdiff(predictors, c("assets", "debt"))
+spline_terms <- c(
+  paste0("splines::ns(", spline_predictors, ", df = 3)"),
+  "assets",
+  "debt"
+)
 spline_formula <- stats::as.formula(
   paste("status_bad ~", paste(spline_terms, collapse = " + "))
 )
