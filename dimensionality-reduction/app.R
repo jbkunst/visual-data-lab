@@ -17,7 +17,7 @@ thematic::thematic_shiny(font = "auto")
 apptheme <- bs_theme()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
-card <- purrr::partial(bslib::card, full_screen = TRUE)
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 # app options -------------------------------------------------------------
 n_choices <- c("100", "200", "500", "700", "1000")
@@ -938,7 +938,6 @@ server <- function(input, output, session) {
       )
 
       incProgress(0.2, detail = "PCA")
-
       projections <- list()
       projections$pca <- run_pca(generated$x)
 
