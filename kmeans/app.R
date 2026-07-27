@@ -8,6 +8,7 @@ library(tibble)
 library(stringr)
 library(klassets)
 library(deldir)
+library(markdown)
 
 # theme options -----------------------------------------------------------
 thematic::thematic_shiny(font = "auto")

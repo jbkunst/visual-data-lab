@@ -3,6 +3,7 @@ library(shiny)
 library(bslib)
 library(highcharter)
 library(tibble)
+library(markdown)
 
 # theme -------------------------------------------------------------------
 apptheme <- bs_theme(primary = "#007BC2")
