@@ -19,3 +19,4 @@ rchessbase/data/*
 /docs/
 /site-build-report.json
 /site-assets/screenshots/
+/shap-explorer/data/shap-credit.rds
