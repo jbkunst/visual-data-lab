@@ -39,7 +39,6 @@ jobs:
             any::fs
             any::glue
             any::httpuv
-            any::jsonlite
             any::purrr
             any::quarto
             any::shinylive
@@ -47,6 +46,14 @@ jobs:
             any::tibble
             any::webshot2
             any::yaml
+
+      - name: Cache Shinylive assets and packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/shinylive
+          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R') }}
+          restore-keys: |
+            ${{ runner.os }}-shinylive-
 
       - name: Build site
         shell: Rscript {0}
