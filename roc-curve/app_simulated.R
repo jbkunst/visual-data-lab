@@ -8,7 +8,7 @@ library(tibble)
 apptheme <- bs_theme(primary = "#007BC2")
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
-card <- purrr::partial(bslib::card, full_screen = TRUE)
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 # app options -------------------------------------------------------------
 mean_negative_choices <- c("-4", "-3", "-2", "-1", "-0.5", "0")
@@ -127,6 +127,7 @@ server <- function(input, output, session) {
       )
     )
   })
+
   density_data <- reactive({
     data <- data_sample()
     threshold <- as.numeric(input$threshold)
@@ -408,6 +409,7 @@ server <- function(input, output, session) {
     },
     ignoreInit = TRUE
   )
+
   observeEvent(input$threshold, {
     density <- density_data()
     y_max <- max(density$density)
