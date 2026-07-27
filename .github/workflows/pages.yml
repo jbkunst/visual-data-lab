@@ -47,6 +47,8 @@ jobs:
             any::webshot2
             any::yaml
             github::jbkunst/klassets@v0.1.2
+            github::jbkunst/celavi@v0.1.2
+            github::jbkunst/risk3r@v0.1.2
 
       - name: Cache Shinylive assets and packages
         uses: actions/cache@v4
