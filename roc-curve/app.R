@@ -29,6 +29,35 @@ region_palette <- c(
   "TP" = "#8f95d9"
 )
 
+region_labels <- c(
+  "TN" = "True negative",
+  "FP" = "False positive",
+  "FN" = "False negative",
+  "TP" = "True positive"
+)
+
+metric_labels <- c(
+  "TPR" = "True positive rate",
+  "FPR" = "False positive rate",
+  "Specificity" = "Specificity",
+  "Precision" = "Precision",
+  "F1" = "F1 score",
+  "Accuracy" = "Accuracy",
+  "AUC" = "Area under the curve"
+)
+
+metric_descriptions <- c(
+  "TPR" = "Among observed positives, the proportion correctly predicted as positive.",
+  "FPR" = "Among observed negatives, the proportion incorrectly predicted as positive.",
+  "Specificity" = "Among observed negatives, the proportion correctly predicted as negative.",
+  "Precision" = "Among predicted positives, the proportion that is actually positive.",
+  "F1" = "The harmonic mean of precision and true positive rate.",
+  "Accuracy" = "The proportion of all observations classified correctly.",
+  "AUC" = "The probability that a positive observation receives a higher score than a negative one."
+)
+
+
+
 threshold_color <- "#D9A441"
 
 options(
@@ -52,6 +81,20 @@ safe_divide <- function(x, y) {
 xy_data <- function(x, y, digits = 3) {
   Map(function(.x, .y) list(round(.x, digits), round(.y, digits)), x, y)
 }
+
+metric_chart_data <- function(data) {
+  lapply(seq_len(nrow(data)), function(i) {
+    metric <- data$metric[[i]]
+
+    list(
+      name = metric_labels[[metric]],
+      y = round(data$value[[i]], 3),
+      description = metric_descriptions[[metric]]
+    )
+  })
+}
+
+
 
 # development input -------------------------------------------------------
 # input <- list(mean_1 = "-1", sd_1 = "1", mean_2 = "1", sd_2 = "1", threshold = 0, n = "500", p_1 = "50")
@@ -330,7 +373,7 @@ server <- function(input, output, session) {
       hc <- hc |>
         hc_add_series(
           id = region,
-          name = region,
+          name = region_labels[[region]],
           type = "area",
           data = xy_data(region_data$score, region_data$density),
           color = region_palette[[region]],
@@ -399,10 +442,10 @@ server <- function(input, output, session) {
     n <- sum(cm$value)
 
     heatmap_data <- list(
-      list(x = 0, y = 0, value = cm$value[cm$cell == "TN"], percent = 100 * cm$percent[cm$cell == "TN"], name = "TN", color = region_palette[["TN"]]),
-      list(x = 1, y = 0, value = cm$value[cm$cell == "FP"], percent = 100 * cm$percent[cm$cell == "FP"], name = "FP", color = region_palette[["FP"]]),
-      list(x = 0, y = 1, value = cm$value[cm$cell == "FN"], percent = 100 * cm$percent[cm$cell == "FN"], name = "FN", color = region_palette[["FN"]]),
-      list(x = 1, y = 1, value = cm$value[cm$cell == "TP"], percent = 100 * cm$percent[cm$cell == "TP"], name = "TP", color = region_palette[["TP"]])
+      list(x = 0, y = 0, value = cm$value[cm$cell == "TN"], percent = 100 * cm$percent[cm$cell == "TN"], name = region_labels[["TN"]], color = region_palette[["TN"]]),
+      list(x = 1, y = 0, value = cm$value[cm$cell == "FP"], percent = 100 * cm$percent[cm$cell == "FP"], name = region_labels[["FP"]], color = region_palette[["FP"]]),
+      list(x = 0, y = 1, value = cm$value[cm$cell == "FN"], percent = 100 * cm$percent[cm$cell == "FN"], name = region_labels[["FN"]], color = region_palette[["FN"]]),
+      list(x = 1, y = 1, value = cm$value[cm$cell == "TP"], percent = 100 * cm$percent[cm$cell == "TP"], name = region_labels[["TP"]], color = region_palette[["TP"]])
     )
 
     highchart() |>
@@ -425,21 +468,24 @@ server <- function(input, output, session) {
 
   output$metrics_chart <- renderHighchart({
     data <- isolate(metrics())
-    data$value <- round(data$value, 3)
 
     highchart() |>
       hc_chart(type = "bar", spacing = c(8, 8, 8, 8)) |>
       hc_title(text = NULL) |>
-      hc_xAxis(categories = data$metric, title = list(text = NULL)) |>
-      hc_yAxis(title = list(text = NULL), min = 0, max = 1) |>
+      hc_xAxis(title = list(text = ""), categories = unname(metric_labels[data$metric]), title = list(text = NULL)) |>
+      hc_yAxis(title = list(text = ""), min = 0, max = 1) |>
       hc_add_series(
         id = "metrics",
         name = "Value",
-        data = as.list(data$value),
+        data = metric_chart_data(data),
         color = "#007BC2",
         dataLabels = list(enabled = TRUE, format = "{point.y:.3f}")
       ) |>
-      hc_tooltip(valueDecimals = 3) |>
+      hc_tooltip(
+        useHTML = TRUE,
+        headerFormat = "",
+        pointFormat = "<span>{point.name}</span><br><span style='display:block;width:220px;white-space:normal'>{point.description}</span><br>Value: {point.y:.3f}"
+      ) |>
       hc_legend(enabled = FALSE)
   })
 
@@ -489,7 +535,7 @@ server <- function(input, output, session) {
       highchartProxy("metrics_chart") |>
         hcpxy_update_series(
           id = "metrics",
-          data = round(current$value, 3)
+          data = metric_chart_data(current)
         )
     },
     ignoreInit = TRUE
@@ -536,7 +582,7 @@ server <- function(input, output, session) {
     highchartProxy("metrics_chart") |>
       hcpxy_update_series(
         id = "metrics",
-        data = round(current$value, 3)
+        data = metric_chart_data(current)
       )
   }, ignoreInit = TRUE)
 }
