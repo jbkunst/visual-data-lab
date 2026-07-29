@@ -48,9 +48,54 @@ ui <- page_fillable(
     sidebar = sidebar(
       title = "Lorenz System Parameters",
       withMathJax(),
-      sliderInput("sigma", "\\( \\sigma \\) (sigma):", min = 1, max = 20, value = 10, step = 0.1),
-      sliderInput("rho", "\\( \\rho \\) (rho):", min = 1, max = 50, value = 28, step = 0.1),
-      sliderInput("beta", "\\( \\beta \\) (beta):", min = 0.1, max = 10, value = 8/3, step = 0.1),
+      sliderInput(
+        "sigma",
+        tagList(
+          "\\( \\sigma \\) (sigma):",
+          bslib::tooltip(
+            bsicons::bs_icon("info-circle", class = "ms-1", title = "About sigma"),
+            "Controls how quickly x follows y.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        ),
+        min = 1,
+        max = 20,
+        value = 10,
+        step = 0.1
+      ),
+      sliderInput(
+        "rho",
+        tagList(
+          "\\( \\rho \\) (rho):",
+          bslib::tooltip(
+            bsicons::bs_icon("info-circle", class = "ms-1", title = "About rho"),
+            "Controls the system's driving strength and whether chaotic behavior emerges.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        ),
+        min = 1,
+        max = 50,
+        value = 28,
+        step = 0.1
+      ),
+      sliderInput(
+        "beta",
+        tagList(
+          "\\( \\beta \\) (beta):",
+          bslib::tooltip(
+            bsicons::bs_icon("info-circle", class = "ms-1", title = "About beta"),
+            "Controls damping in the z direction.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        ),
+        min = 0.1,
+        max = 10,
+        value = 8/3,
+        step = 0.1
+      ),
       shinyWidgets::sliderTextInput(
         "n_points",
         "Number of points:",
@@ -61,7 +106,15 @@ ui <- page_fillable(
       ),
       shinyWidgets::sliderTextInput(
         "dt",
-        "Time step (dt):",
+        tagList(
+          "Time step (dt):",
+          bslib::tooltip(
+            bsicons::bs_icon("info-circle", class = "ms-1", title = "About time step"),
+            "Larger steps cover more time per point but reduce numerical accuracy.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        ),
         choices = c("0.001", "0.002", "0.005", "0.01", "0.02", "0.05"),
         selected = "0.01",
         grid = TRUE,
