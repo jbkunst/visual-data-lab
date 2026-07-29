@@ -84,6 +84,41 @@ Replace `kmeans` with the app folder name. Screenshots are source assets and sho
 
 If a Shinylive app cannot be exported, the build fails. Move it to the server runtime only when there is a deliberate reason to host it on Posit Connect Cloud.
 
+## Input Help and Tooltips
+
+Use input tooltips conservatively. Add them only when a control represents a non-obvious statistical or mathematical concept, uses a confusing scale, changes the result conceptually, or needs context that does not fit naturally in its label.
+
+- Treat two to four tooltips per app as an upper limit, not a target.
+- Do not add help to obvious controls such as the number of observations unless there is an important non-obvious consequence.
+- Keep each tooltip focused on one idea and preferably below 25 words.
+- Do not repeat the general explanation already available in `readme.md`.
+- Preserve existing label wrappers such as `tags$small()` and the current sidebar spacing.
+- Use namespace-qualified calls instead of adding `library(bsicons)`.
+- Give icon-only triggers a short accessible `title`.
+- Add a small spacing utility such as `class = "ms-1"` so the icon remains visually separate from the label.
+- Support hover, keyboard focus, and click/touch with `options = list(trigger = "hover focus click")`.
+- Test the icon at normal and narrow widths and verify the interaction directly in the running app.
+
+Use this pattern, adapting the outer wrapper to the existing label:
+
+```r
+label = tags$small(tagList(
+  "Parameter name",
+  bslib::tooltip(
+    bsicons::bs_icon(
+      "info-circle",
+      class = "ms-1",
+      title = "About parameter name"
+    ),
+    "Short explanation.",
+    placement = "right",
+    options = list(trigger = "hover focus click")
+  )
+))
+```
+
+Before implementing tooltips across an app, list the selected inputs and why each one needs help. It is valid for an app to need no tooltips.
+
 ## Build
 
 From an interactive R session at the repository root:
