@@ -97,7 +97,24 @@ Use input tooltips conservatively. Add them only when a control represents a non
 - Give icon-only triggers a short accessible `title`.
 - Add a small spacing utility such as `class = "ms-1"` so the icon remains visually separate from the label.
 - Support hover, keyboard focus, and click/touch with `options = list(trigger = "hover focus click")`.
+- Use a light tooltip theme with a white background, dark text, and a subtle border or shadow.
 - Test the icon at normal and narrow widths and verify the interaction directly in the running app.
+
+Configure the light tooltip appearance once in the app theme:
+
+```r
+apptheme <- bs_theme(
+  "tooltip-bg" = "$white",
+  "tooltip-color" = "$body-color",
+  "tooltip-opacity" = 1
+) |>
+  bs_add_rules(
+    ".tooltip-inner {
+      border: 1px solid $border-color;
+      box-shadow: $box-shadow-sm;
+    }"
+  )
+```
 
 Use this pattern, adapting the outer wrapper to the existing label:
 
