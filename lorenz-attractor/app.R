@@ -8,7 +8,17 @@ library(markdown)
 library(shinyWidgets)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- bs_theme(
+  "tooltip-bg" = "$white",
+  "tooltip-color" = "$body-color",
+  "tooltip-opacity" = 1
+) |>
+  bs_add_rules(
+    ".tooltip-inner {
+      border: 1px solid $border-color;
+      box-shadow: $box-shadow-sm;
+    }"
+  )
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
