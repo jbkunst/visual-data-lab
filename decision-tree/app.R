@@ -12,7 +12,7 @@ library(risk3r)       # remotes::install_github("jbkunst/risk3r", force = TRUE)
 library(klassets)     # remotes::install_github("jbkunst/klassets", force = TRUE)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- bs_theme("tooltip-bg" = "#495057")
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
@@ -48,7 +48,20 @@ ui <- page_fillable(
         ),
       sliderInput(
         "percent_noise",
-        tags$small("Percent noise"),
+        tags$small(tagList(
+          "Percent noise",
+          bslib::tooltip(
+            tags$span(
+              bsicons::bs_icon("info-circle"),
+              class = "ms-1",
+              role = "button",
+              `aria-label` = "About percent noise"
+            ),
+            "Randomly flips this percentage of class labels, making the underlying relationship harder to learn.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        )),
         min = 0,
         max = 50,
         step = 5,
@@ -57,7 +70,20 @@ ui <- page_fillable(
       ),
       sliderInput(
         "depth",
-        tags$small("Maximum depth of the tree"),
+        tags$small(tagList(
+          "Maximum depth of the tree",
+          bslib::tooltip(
+            tags$span(
+              bsicons::bs_icon("info-circle"),
+              class = "ms-1",
+              role = "button",
+              `aria-label` = "About maximum tree depth"
+            ),
+            "Limits how many split levels the tree can grow; deeper trees can fit more complex boundaries.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        )),
         min = 1,
         max = 8,
         step = 1,
@@ -65,7 +91,20 @@ ui <- page_fillable(
       ),
       sliderInput(
         "alpha",
-        tags$small("Significance level for variable selection \\( \\alpha \\)"),
+        tags$small(tagList(
+          "Significance level for variable selection \\( \\alpha \\)",
+          bslib::tooltip(
+            tags$span(
+              bsicons::bs_icon("info-circle"),
+              class = "ms-1",
+              role = "button",
+              `aria-label` = "About alpha"
+            ),
+            "Only splits with p-values below this level are accepted; smaller values make the tree more conservative.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        )),
         min = 0,
         max = 1,
         step = 0.05,
