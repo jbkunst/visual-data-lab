@@ -29,7 +29,8 @@ apptheme <- bs_theme(
   bg = "#f5f7fb",
   fg = "#172033",
   primary = "#2a75bb",
-  secondary = "#ffcb05"
+  secondary = "#ffcb05",
+  "tooltip-bg" = "#495057"
 )
 
 sidebar <- purrr::partial(bslib::sidebar, width = 305)
@@ -224,7 +225,20 @@ ui <- page_fillable(
         "input.method === 'tsne'",
         sliderInput(
           "perplexity",
-          "Perplexity",
+          tagList(
+            "Perplexity",
+            bslib::tooltip(
+              tags$span(
+                bsicons::bs_icon("info-circle"),
+                class = "ms-1",
+                role = "button",
+                `aria-label` = "About perplexity"
+              ),
+              "Controls the effective neighborhood size t-SNE tries to preserve; larger values emphasize broader structure.",
+              placement = "right",
+              options = list(trigger = "hover focus click")
+            )
+          ),
           min = 5,
           max = 100,
           value = 40,
@@ -243,7 +257,20 @@ ui <- page_fillable(
         "input.method === 'umap'",
         sliderInput(
           "n_neighbors",
-          "Neighbors",
+          tagList(
+            "Neighbors",
+            bslib::tooltip(
+              tags$span(
+                bsicons::bs_icon("info-circle"),
+                class = "ms-1",
+                role = "button",
+                `aria-label` = "About UMAP neighbors"
+              ),
+              "Controls how many nearby observations UMAP uses to define local structure; larger values emphasize broader patterns.",
+              placement = "right",
+              options = list(trigger = "hover focus click")
+            )
+          ),
           min = 2,
           max = 100,
           value = 30,
@@ -251,7 +278,20 @@ ui <- page_fillable(
         ),
         sliderInput(
           "min_dist",
-          "Minimum distance",
+          tagList(
+            "Minimum distance",
+            bslib::tooltip(
+              tags$span(
+                bsicons::bs_icon("info-circle"),
+                class = "ms-1",
+                role = "button",
+                `aria-label` = "About UMAP minimum distance"
+              ),
+              "Controls how tightly UMAP can pack nearby points in the embedding; smaller values form denser clusters.",
+              placement = "right",
+              options = list(trigger = "hover focus click")
+            )
+          ),
           min = 0,
           max = 0.95,
           value = 0.15,

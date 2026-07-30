@@ -3,7 +3,7 @@ library(shiny)
 library(bslib)
 
 # theme -------------------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- bs_theme("tooltip-bg" = "#495057")
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 

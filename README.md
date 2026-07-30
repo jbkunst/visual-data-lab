@@ -86,7 +86,7 @@ If a Shinylive app cannot be exported, the build fails. Move it to the server ru
 
 ## Input Help and Tooltips
 
-Use input tooltips conservatively. Add them only when a control represents a non-obvious statistical or mathematical concept, uses a confusing scale, changes the result conceptually, or needs context that does not fit naturally in its label.
+Use input tooltips conservatively across all apps, including drafts. Add them only when a control represents a non-obvious statistical or mathematical concept, uses a confusing scale, changes the result conceptually, or needs context that does not fit naturally in its label.
 
 - Treat two to four tooltips per app as an upper limit, not a target.
 - Do not add help to obvious controls such as the number of observations unless there is an important non-obvious consequence.
@@ -94,27 +94,20 @@ Use input tooltips conservatively. Add them only when a control represents a non
 - Do not repeat the general explanation already available in `readme.md`.
 - Preserve existing label wrappers such as `tags$small()` and the current sidebar spacing.
 - Use namespace-qualified calls instead of adding `library(bsicons)`.
-- Give icon-only triggers a short accessible `title`.
+- Do not set `title` on the icon trigger; browser-native title tooltips duplicate the `bslib` tooltip.
+- For an icon-only trigger, wrap the icon in an accessible span with `role = "button"` and an `aria-label`.
 - Add a small spacing utility such as `class = "ms-1"` so the icon remains visually separate from the label.
 - Support hover, keyboard focus, and click/touch with `options = list(trigger = "hover focus click")`.
-- Use a light tooltip theme with a white background, dark text, and a subtle border or shadow.
+- Use the repository tooltip background `#495057`; keep the rest of the appearance on Bootstrap defaults.
 - Test the icon at normal and narrow widths and verify the interaction directly in the running app.
 
-Configure the light tooltip appearance once in the app theme:
+Configure the tooltip appearance once in each app that uses tooltips:
 
 ```r
-apptheme <- bs_theme(
-  "tooltip-bg" = "$white",
-  "tooltip-color" = "$body-color",
-  "tooltip-opacity" = 1
-) |>
-  bs_add_rules(
-    ".tooltip-inner {
-      border: 1px solid $border-color;
-      box-shadow: $box-shadow-sm;
-    }"
-  )
+apptheme <- bs_theme("tooltip-bg" = "#495057")
 ```
+
+If the app already customizes `bs_theme()`, keep those settings and add `"tooltip-bg" = "#495057"` to the same call.
 
 Use this pattern, adapting the outer wrapper to the existing label:
 
@@ -122,10 +115,11 @@ Use this pattern, adapting the outer wrapper to the existing label:
 label = tags$small(tagList(
   "Parameter name",
   bslib::tooltip(
-    bsicons::bs_icon(
-      "info-circle",
+    tags$span(
+      bsicons::bs_icon("info-circle"),
       class = "ms-1",
-      title = "About parameter name"
+      role = "button",
+      `aria-label` = "About parameter name"
     ),
     "Short explanation.",
     placement = "right",
