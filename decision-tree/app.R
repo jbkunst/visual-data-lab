@@ -70,20 +70,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "depth",
-        tags$small(tagList(
-          "Maximum depth of the tree",
-          bslib::tooltip(
-            tags$span(
-              bsicons::bs_icon("info-circle"),
-              class = "ms-1",
-              role = "button",
-              `aria-label` = "About maximum tree depth"
-            ),
-            "Limits how many split levels the tree can grow; deeper trees can fit more complex boundaries.",
-            placement = "right",
-            options = list(trigger = "hover focus click")
-          )
-        )),
+        tags$small("Maximum depth of the tree"),
         min = 1,
         max = 8,
         step = 1,
@@ -91,20 +78,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "alpha",
-        tags$small(tagList(
-          "Significance level for variable selection \\( \\alpha \\)",
-          bslib::tooltip(
-            tags$span(
-              bsicons::bs_icon("info-circle"),
-              class = "ms-1",
-              role = "button",
-              `aria-label` = "About alpha"
-            ),
-            "Only splits with p-values below this level are accepted; smaller values make the tree more conservative.",
-            placement = "right",
-            options = list(trigger = "hover focus click")
-          )
-        )),
+        tags$small("Significance level for variable selection \\( \\alpha \\)"),
         min = 0,
         max = 1,
         step = 0.05,
