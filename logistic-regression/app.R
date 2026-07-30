@@ -11,7 +11,7 @@ library(risk3r)       # remotes::install_github("jbkunst/risk3r", force = TRUE)
 library(klassets)     # remotes::install_github("jbkunst/klassets", force = TRUE)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- bs_theme("tooltip-bg" = "#495057")
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
@@ -47,7 +47,20 @@ ui <- page_fillable(
         ),
       sliderInput(
         "percent_noise",
-        tags$small("Percent noise"),
+        tags$small(tagList(
+          "Percent noise",
+          bslib::tooltip(
+            tags$span(
+              bsicons::bs_icon("info-circle"),
+              class = "ms-1",
+              role = "button",
+              `aria-label` = "About percent noise"
+            ),
+            "Randomly flips this percentage of class labels, making the underlying relationship harder to learn.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        )),
         min = 0,
         max = 50,
         step = 5,
@@ -56,7 +69,20 @@ ui <- page_fillable(
       ),
       sliderInput(
         "order",
-        tags$span("Model Order"),
+        tags$span(tagList(
+          "Model Order",
+          bslib::tooltip(
+            tags$span(
+              bsicons::bs_icon("info-circle"),
+              class = "ms-1",
+              role = "button",
+              `aria-label` = "About model order"
+            ),
+            "Adds higher-order polynomial terms, allowing the logistic model to represent increasingly curved decision boundaries.",
+            placement = "right",
+            options = list(trigger = "hover focus click")
+          )
+        )),
         min = 1,
         max = 4,
         step = 1,
