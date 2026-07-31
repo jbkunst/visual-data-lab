@@ -8,17 +8,7 @@ library(markdown)
 library(shinyWidgets)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme(
-  "tooltip-bg" = "$white",
-  "tooltip-color" = "$body-color",
-  "tooltip-opacity" = 1
-) |>
-  bs_add_rules(
-    ".tooltip-inner {
-      border: 1px solid $border-color;
-      box-shadow: $box-shadow-sm;
-    }"
-  )
+apptheme <- bs_theme("tooltip-bg" = "#495057")
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
@@ -63,7 +53,7 @@ ui <- page_fillable(
         tagList(
           "\\( \\sigma \\) (sigma):",
           bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1", title = "About sigma"),
+            bsicons::bs_icon("info-circle", class = "ms-1"),
             "Controls how quickly x follows y.",
             placement = "right",
             options = list(trigger = "hover focus click")
@@ -79,7 +69,7 @@ ui <- page_fillable(
         tagList(
           "\\( \\rho \\) (rho):",
           bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1", title = "About rho"),
+            bsicons::bs_icon("info-circle", class = "ms-1"),
             "Controls the system's driving strength and whether chaotic behavior emerges.",
             placement = "right",
             options = list(trigger = "hover focus click")
@@ -95,7 +85,7 @@ ui <- page_fillable(
         tagList(
           "\\( \\beta \\) (beta):",
           bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1", title = "About beta"),
+            bsicons::bs_icon("info-circle", class = "ms-1"),
             "Controls damping in the z direction.",
             placement = "right",
             options = list(trigger = "hover focus click")
@@ -119,7 +109,7 @@ ui <- page_fillable(
         tagList(
           "Time step (dt):",
           bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1", title = "About time step"),
+            bsicons::bs_icon("info-circle", class = "ms-1"),
             "Larger steps cover more time per point but reduce numerical accuracy.",
             placement = "right",
             options = list(trigger = "hover focus click")
