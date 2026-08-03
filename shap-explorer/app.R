@@ -3,9 +3,12 @@ library(shiny)
 library(bslib)
 library(markdown)
 library(rpart)
+library(randomForest)
+library(xgboost)
 
 # data --------------------------------------------------------------------
 artifact <- readRDS("data/shap-credit.rds")
+artifact$models$xgboost$fit <- xgboost::xgb.load.raw(artifact$models$xgboost$fit)
 
 predictors <- artifact$predictors
 models <- artifact$models
@@ -15,57 +18,18 @@ predict_model <- function(model, newdata) {
   prediction <- switch(
     model$type,
     logistic = stats::predict(model$fit, newdata = newdata, type = "response"),
-    spline = stats::predict(model$fit, newdata = newdata, type = "response"),
     tree = stats::predict(model$fit, newdata = newdata),
-    bagged = Reduce(
-      `+`,
-      lapply(model$fit, function(tree) stats::predict(tree, newdata = newdata))
-    ) / length(model$fit)
+    random_forest = stats::predict(model$fit, newdata = newdata, type = "prob")[, "1"],
+    xgboost = stats::predict(
+      model$fit,
+      xgboost::xgb.DMatrix(as.matrix(newdata), nthread = 1)
+    )
   )
 
   pmin(pmax(as.numeric(prediction), 0), 1)
 }
 
-shap_one <- function(model, x, background, nsim = 24L, seed = 1L) {
-  set.seed(seed)
-
-  variables <- names(x)
-  values <- setNames(numeric(length(variables)), variables)
-
-  for (variable in variables) {
-    before <- background[sample.int(nrow(background), nsim, replace = TRUE), , drop = FALSE]
-    after <- before
-
-    for (s in seq_len(nsim)) {
-      permutation <- sample(variables)
-      position <- match(variable, permutation)
-      preceding <- if (position > 1L) permutation[seq_len(position - 1L)] else character()
-
-      if (length(preceding)) {
-        before[s, preceding] <- x[1, preceding, drop = FALSE]
-        after[s, preceding] <- x[1, preceding, drop = FALSE]
-      }
-
-      after[s, variable] <- x[[variable]]
-    }
-
-    values[[variable]] <- mean(
-      predict_model(model, after) - predict_model(model, before)
-    )
-  }
-
-  baseline <- mean(predict_model(model, background))
-  prediction <- predict_model(model, x)[[1]]
-  residual <- prediction - baseline - sum(values)
-
-  if (sum(abs(values)) > 0) {
-    values <- values + residual * abs(values) / sum(abs(values))
-  } else {
-    values <- values + residual / length(values)
-  }
-
-  values
-}
+source("local_shap.R", local = TRUE)
 
 profile_labels <- c(
   seniority = "Seniority",
@@ -88,19 +52,16 @@ make_slider <- function(variable) {
     min = meta$min,
     max = meta$max,
     value = meta$value,
-    step = meta$step,
     ticks = FALSE
   )
 }
 
 # theme -------------------------------------------------------------------
 apptheme <- bs_theme()
+
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
-card <- purrr::partial(
-  bslib::card,
-  full_screen = TRUE,
-  wrapper = purrr::partial(bslib::card_body, padding = 12)
-)
+
+card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 12))
 
 # ui ----------------------------------------------------------------------
 ui <- page_fillable(
@@ -111,7 +72,7 @@ ui <- page_fillable(
     sidebar = sidebar(
       title = "Client profile",
       actionButton("random_profile", "Random case", class = "btn-primary w-100"),
-      tags$small("Selects one observation from the development sample."),
+      tags$small("Selects one observation from the training sample."),
       lapply(predictors, make_slider),
       accordion(
         open = FALSE,
@@ -183,8 +144,8 @@ server <- function(input, output, session) {
 
   observeEvent(input$random_profile, {
     updating_profile(TRUE)
-    row <- artifact$development[
-      sample.int(nrow(artifact$development), 1L),
+    row <- artifact$predictor_data[
+      sample.int(nrow(artifact$predictor_data), 1L),
       predictors,
       drop = FALSE
     ]
@@ -211,13 +172,13 @@ server <- function(input, output, session) {
   current_shap <- reactive({
     request <- shap_request()
 
-    shap_one(
+    local_shap_trace(
       models[[request$model]],
       x = request$profile,
       background = artifact$background,
-      nsim = 24L,
       seed = 2026L
-    )
+    ) |>
+      summarize_shap()
   })
 
   output$prediction_summary <- renderUI({
@@ -226,7 +187,7 @@ server <- function(input, output, session) {
     div(
       class = "d-flex gap-4 align-items-end px-2 pt-2",
       div(tags$small("Predicted PD"), tags$h2(scales::percent(current_pd(), accuracy = 0.1))),
-      div(tags$small("Portfolio mean"), tags$h4(scales::percent(baseline, accuracy = 0.1))),
+      div(tags$small("Background mean"), tags$h4(scales::percent(baseline, accuracy = 0.1))),
       div(tags$small("Active variable"), tags$h5(profile_labels[[active_variable()]]))
     )
   })
@@ -264,7 +225,7 @@ server <- function(input, output, session) {
   })
 
   output$pd_plot <- renderPlot({
-    pd <- artifact$pd[[input$model]]
+    pd <- artifact$portfolio_pd[[input$model]]
 
     hist(
       pd,
@@ -286,7 +247,7 @@ server <- function(input, output, session) {
 
   output$dependence_plot <- renderPlot({
     variable <- active_variable()
-    data <- artifact$shap_data
+    data <- artifact$dependence_data
     data <- data[data$model == input$model & data$variable == variable, , drop = FALSE]
 
     plot(

@@ -94,26 +94,16 @@ Use input tooltips conservatively. Add them only when a control represents a non
 - Do not repeat the general explanation already available in `readme.md`.
 - Preserve existing label wrappers such as `tags$small()` and the current sidebar spacing.
 - Use namespace-qualified calls instead of adding `library(bsicons)`.
-- Give icon-only triggers a short accessible `title`.
+- Do not add `title` to the icon: it creates a native browser tooltip that competes with `bslib::tooltip()`.
 - Add a small spacing utility such as `class = "ms-1"` so the icon remains visually separate from the label.
 - Support hover, keyboard focus, and click/touch with `options = list(trigger = "hover focus click")`.
-- Use a light tooltip theme with a white background, dark text, and a subtle border or shadow.
+- Keep tooltip theming minimal; a softer dark background preserves Bootstrap's default white text.
 - Test the icon at normal and narrow widths and verify the interaction directly in the running app.
 
-Configure the light tooltip appearance once in the app theme:
+Configure the tooltip appearance once in the app theme:
 
 ```r
-apptheme <- bs_theme(
-  "tooltip-bg" = "$white",
-  "tooltip-color" = "$body-color",
-  "tooltip-opacity" = 1
-) |>
-  bs_add_rules(
-    ".tooltip-inner {
-      border: 1px solid $border-color;
-      box-shadow: $box-shadow-sm;
-    }"
-  )
+apptheme <- bs_theme("tooltip-bg" = "#495057")
 ```
 
 Use this pattern, adapting the outer wrapper to the existing label:
@@ -124,8 +114,7 @@ label = tags$small(tagList(
   bslib::tooltip(
     bsicons::bs_icon(
       "info-circle",
-      class = "ms-1",
-      title = "About parameter name"
+      class = "ms-1"
     ),
     "Short explanation.",
     placement = "right",
