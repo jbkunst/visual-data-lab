@@ -59,3 +59,5 @@ Permutation importance is calculated with `celavi` and log-loss. Drop-column mod
 - `model-evaluation/credit-evaluation.rds`
 
 These four artifacts share identifiers and conventions, so a future combined app can load and reuse them without recalculating the methods. None includes the training sample.
+
+This PR only prepares the artifacts. It does not yet change the existing `shap-explorer` app to read the new path or schema.
