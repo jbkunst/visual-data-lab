@@ -16,9 +16,9 @@ if (length(missing_packages)) {
 
 source("R/credit-data/00-helpers.R", local = TRUE)
 
+analysis_path <- "R/credit-data/credit-analysis.rds"
 split_seed <- 2026L
 model_seed <- 2026L
-shap_seed <- 2026L
 
 # 1. Prepare the modeling sample -----------------------------------------
 predictors <- c(
@@ -47,7 +47,8 @@ train <- rsample::training(credit_split) |>
   dplyr::select(-split_stratum)
 
 test <- rsample::testing(credit_split) |>
-  dplyr::select(-split_stratum)
+  dplyr::select(-split_stratum) |>
+  dplyr::mutate(row_id = dplyr::row_number(), .before = 1)
 
 train_predictors <- train |>
   dplyr::select(dplyr::all_of(predictors))
@@ -118,7 +119,7 @@ models <- list(
   xgboost = list(type = "xgboost", label = "XGBoost", fit = xgboost)
 )
 
-# 3. Reduce model size and validate predictions --------------------------
+# 3. Reduce models and preserve common predictions -----------------------
 models <- reduce_models(models, validation_data = test_predictors)
 
 test_predictions <- purrr::map(
@@ -129,84 +130,40 @@ test_predictions <- purrr::map(
 
 validate_predictions(test_predictions, nrow(test))
 
-# 4. Precompute SHAP values ----------------------------------------------
-# Test is used directly as both the explained population and SHAP background.
-# No separate background object or row identifiers are stored in the artifacts.
-shap_values <- calculate_shap_values(
-  models = models,
-  explanation_data = test_predictors,
-  background = test_predictors,
-  seed = shap_seed
-)
-
-expected_shap_rows <- length(models) * nrow(test) * length(predictors)
-
-if (nrow(shap_values) != expected_shap_rows || anyNA(shap_values$shap)) {
-  stop("The precomputed SHAP table is incomplete.")
-}
-
-# 5. Build small app-specific artifacts ----------------------------------
-control_meta <- predictors |>
-  stats::setNames(predictors) |>
-  purrr::map(function(variable) {
-    values <- train[[variable]]
-
-    list(
-      min = min(values),
-      max = max(values),
-      value = unname(stats::median(values))
+predictions <- purrr::imap_dfr(
+  test_predictions,
+  function(score, model_name) {
+    tibble::tibble(
+      row_id = test$row_id,
+      model = model_name,
+      status_bad = test$status_bad,
+      score = score
     )
-  })
-
-serialized_models <- serialize_models(models)
-
-shap_artifact <- list(
-  test = test_predictors,
-  predictors = predictors,
-  models = serialized_models,
-  control_meta = control_meta,
-  shap_values = shap_values
+  }
 )
 
-effects_artifact <- list(
-  test = test_predictors,
-  predictors = predictors,
-  models = serialized_models
-)
+models <- serialize_models(models)
 
-importance_artifact <- list(
+# 4. Start one reusable analysis artifact --------------------------------
+credit_analysis <- list(
   train = train,
   test = test,
   predictors = predictors,
-  models = serialized_models,
-  shap_values = shap_values
+  models = models,
+  predictions = predictions,
+  metadata = list(
+    version = 1L,
+    data = "modeldata::credit_data",
+    target = "status_bad",
+    positive_class = 1L,
+    sample = "test",
+    split = "stratified 75/25 train/test",
+    split_seed = split_seed,
+    model_seed = model_seed,
+    model_labels = vapply(models, `[[`, character(1), "label"),
+    prepared_at = Sys.time()
+  )
 )
 
-evaluation_artifact <- tibble::tibble(
-  row_id = seq_len(nrow(test)),
-  status_bad = test$status_bad
-) |>
-  dplyr::bind_cols(tibble::as_tibble(test_predictions))
-
-# 6. Save one artifact beside each app -----------------------------------
-save_credit_artifact(
-  shap_artifact,
-  "shap-explorer/shap-credit.rds"
-)
-
-save_credit_artifact(
-  effects_artifact,
-  "variable-effects/credit-effects.rds"
-)
-
-save_credit_artifact(
-  importance_artifact,
-  "global-feature-importance/credit-importance.rds"
-)
-
-save_credit_artifact(
-  evaluation_artifact,
-  "model-evaluation/credit-evaluation.rds"
-)
-
-cli::cli_success("Credit artifacts are ready.")
+saveRDS(credit_analysis, analysis_path, compress = "gzip")
+cli::cli_success("Saved the base analysis to {.path {analysis_path}}.")
