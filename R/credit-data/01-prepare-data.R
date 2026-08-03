@@ -36,6 +36,7 @@ credit_data <- modeldata::credit_data |>
   dplyr::select(status_bad, split_stratum, dplyr::all_of(predictors))
 
 set.seed(split_seed)
+
 credit_split <- rsample::initial_split(
   credit_data,
   prop = 0.75,
@@ -101,18 +102,6 @@ models <- reduce_models(
 ) |>
   serialize_models()
 
-control_meta <- predictors |>
-  stats::setNames(predictors) |>
-  purrr::map(function(variable) {
-    values <- train[[variable]]
-
-    list(
-      min = min(values),
-      max = max(values),
-      value = unname(stats::median(values))
-    )
-  })
-
 baseline <- predictions |>
   dplyr::summarise(value = mean(score), .by = model) |>
   tibble::deframe()
@@ -123,7 +112,6 @@ credit_models <- list(
   predictors = predictors,
   models = models,
   predictions = predictions,
-  control_meta = control_meta,
   baseline = baseline,
   metadata = list(
     version = 1L,
@@ -147,4 +135,4 @@ saveRDS(
   compress = "xz"
 )
 
-cli::cli_success("Saved {.path R/credit-data/credit-models.rds}.")
+cli::cli_alert_success("Saved {.path R/credit-data/credit-models.rds}.")

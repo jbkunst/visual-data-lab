@@ -39,8 +39,21 @@ cran_packages <- c(
   "yaml",
   "jsonlite",
   "shinylive",
-  "quarto"
+  "quarto",
+  "butcher",
+  "cli",
+  "dplyr",
+  "modeldata",
+  "purrr",
+  "randomForest",
+  "rpart",
+  "rsample",
+  "tibble",
+  "tidyr",
+  "xgboost"
 )
+
+cran_packages <- unique(cran_packages)
 
 github_packages <- c(
   "AllanCameron/geomtextpath",
