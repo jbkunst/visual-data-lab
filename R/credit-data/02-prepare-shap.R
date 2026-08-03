@@ -8,6 +8,7 @@ if (length(missing_packages)) {
 }
 
 source("R/credit-data/00-helpers.R", local = TRUE)
+source("shap-explorer/local_shap.R", local = TRUE)
 
 shap_seed <- 2026L
 credit_models <- readRDS("R/credit-data/credit-models.rds")
@@ -49,16 +50,13 @@ shap_values <- purrr::imap_dfr(
         background = test_predictors,
         seed = shap_seed
       ) |>
-        dplyr::summarise(
-          shap = mean(diff),
-          .by = variable
-        )
+        summarize_shap()
 
       tibble::tibble(
         model = model_name,
         row_id = row_id,
-        variable = as.character(shap$variable),
-        shap = shap$shap
+        variable = names(shap),
+        shap = unname(shap)
       )
     })
 
