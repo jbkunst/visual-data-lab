@@ -81,7 +81,23 @@ test_predictions <- purrr::map(
   newdata = test_predictors
 )
 
-validate_predictions(test_predictions, nrow(test))
+purrr::iwalk(test_predictions, function(prediction, model_name) {
+  if (!is.numeric(prediction)) {
+    stop("Predictions are not numeric for model: ", model_name)
+  }
+
+  if (length(prediction) != nrow(test)) {
+    stop("Unexpected prediction length for model: ", model_name)
+  }
+
+  if (anyNA(prediction)) {
+    stop("Missing predictions for model: ", model_name)
+  }
+
+  if (any(prediction < 0 | prediction > 1)) {
+    stop("Predictions outside [0, 1] for model: ", model_name)
+  }
+})
 
 predictions <- purrr::imap_dfr(
   test_predictions,
@@ -96,11 +112,55 @@ predictions <- purrr::imap_dfr(
 )
 
 # 4. Reduce models after predictions are validated -----------------------
-models <- reduce_models(
-  models,
-  validation_data = test_predictors
-) |>
-  serialize_models()
+models <- purrr::imap(models, function(model, model_name) {
+  prediction_before <- predict_model(model, test_predictors)
+  original_size <- as.numeric(utils::object.size(model$fit))
+
+  reduced_fit <- tryCatch(
+    butcher::butcher(model$fit),
+    error = function(error) {
+      cli::cli_inform(
+        "Keeping {.val {model_name}} unchanged: {conditionMessage(error)}"
+      )
+      NULL
+    }
+  )
+
+  if (is.null(reduced_fit)) {
+    return(model)
+  }
+
+  reduced_size <- as.numeric(utils::object.size(reduced_fit))
+
+  if (reduced_size >= original_size) {
+    cli::cli_inform(
+      "Keeping {.val {model_name}} unchanged: butcher did not reduce its size."
+    )
+    return(model)
+  }
+
+  reduced_model <- model
+  reduced_model$fit <- reduced_fit
+  prediction_after <- predict_model(reduced_model, test_predictors)
+
+  if (!isTRUE(all.equal(prediction_before, prediction_after, tolerance = 1e-12))) {
+    stop("Butchering changed predictions for model: ", model_name)
+  }
+
+  cli::cli_inform(
+    "Reduced {.val {model_name}} from {format(original_size, big.mark = ',')} to {format(reduced_size, big.mark = ',')} bytes."
+  )
+
+  reduced_model
+})
+
+models <- purrr::map(models, function(model) {
+  if (identical(model$type, "xgboost") && !is.raw(model$fit)) {
+    model$fit <- xgboost::xgb.save.raw(model$fit)
+  }
+
+  model
+})
 
 baseline <- predictions |>
   dplyr::summarise(value = mean(score), .by = model) |>
