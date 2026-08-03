@@ -27,30 +27,165 @@ sage_iterations <- 50L
 credit_models <- readRDS("R/credit-data/credit-models.rds")
 shap_artifact <- readRDS("shap-explorer/shap-credit.rds")
 
-permutation_importance <- calculate_permutation_importance(
-  models = credit_models$models,
-  test = credit_models$test,
-  predictors = credit_models$predictors,
-  iterations = permutation_iterations,
-  seed = importance_seed
+models <- credit_models$models
+train <- credit_models$train
+test <- credit_models$test
+predictors <- credit_models$predictors
+test_predictors <- test |>
+  dplyr::select(dplyr::all_of(predictors))
+
+# 1. Permutation importance ----------------------------------------------
+permutation_importance <- purrr::imap_dfr(
+  models,
+  function(model, model_name) {
+    set.seed(importance_seed)
+
+    raw_importance <- celavi::variable_importance(
+      object = model,
+      data = test |>
+        dplyr::select(status_bad, dplyr::all_of(predictors)),
+      variables = predictors,
+      response = "status_bad",
+      loss_function = log_loss,
+      iterations = permutation_iterations,
+      predict_function = function(object, newdata) {
+        predict_model(
+          object,
+          newdata[, predictors, drop = FALSE]
+        )
+      },
+      verbose = TRUE
+    )
+
+    full_loss <- raw_importance |>
+      dplyr::filter(variable == "_full_model_") |>
+      dplyr::select(iteration, loss_before = value)
+
+    raw_importance |>
+      dplyr::filter(variable %in% predictors) |>
+      dplyr::left_join(full_loss, by = "iteration") |>
+      dplyr::transmute(
+        model = model_name,
+        sample = "test",
+        metric = "log_loss",
+        method = "permutation",
+        variable,
+        iteration,
+        importance = value - loss_before,
+        loss_before,
+        loss_after = value
+      )
+  }
 )
 
-drop_column_importance <- calculate_drop_column_importance(
-  models = credit_models$models,
-  train = credit_models$train,
-  test = credit_models$test,
-  predictors = credit_models$predictors,
-  seed = importance_seed
+# 2. Drop-column importance ----------------------------------------------
+full_losses <- purrr::imap_dfr(models, function(model, model_name) {
+  tibble::tibble(
+    model = model_name,
+    loss_before = log_loss(
+      test$status_bad,
+      predict_model(model, test_predictors)
+    )
+  )
+})
+
+drop_progress <- cli::cli_progress_bar(
+  name = "Drop-column",
+  total = length(models) * length(predictors)
 )
 
-sage_importance <- calculate_sage_importance(
-  models = credit_models$models,
-  test = credit_models$test,
-  predictors = credit_models$predictors,
-  iterations = sage_iterations,
-  seed = importance_seed
+drop_column_importance <- purrr::imap_dfr(
+  models,
+  function(model, model_name) {
+    purrr::map_dfr(predictors, function(variable) {
+      cli::cli_progress_update(id = drop_progress)
+
+      reduced_predictors <- setdiff(predictors, variable)
+      reduced_model <- fit_credit_model(
+        model_name,
+        train = train,
+        predictors = reduced_predictors,
+        seed = importance_seed
+      )
+      loss_before <- full_losses$loss_before[full_losses$model == model_name]
+      loss_after <- log_loss(
+        test$status_bad,
+        predict_model(
+          reduced_model,
+          test[, reduced_predictors, drop = FALSE]
+        )
+      )
+
+      tibble::tibble(
+        model = model_name,
+        sample = "test",
+        metric = "log_loss",
+        method = "drop_column",
+        variable = variable,
+        iteration = NA_integer_,
+        importance = loss_after - loss_before,
+        loss_before,
+        loss_after
+      )
+    })
+  }
 )
 
+cli::cli_progress_done(id = drop_progress)
+
+# 3. SAGE ----------------------------------------------------------------
+sage_progress <- cli::cli_progress_bar(
+  name = "SAGE",
+  total = length(models) * sage_iterations
+)
+
+sage_importance <- purrr::imap_dfr(
+  models,
+  function(model, model_name) {
+    purrr::map_dfr(seq_len(sage_iterations), function(iteration) {
+      cli::cli_progress_update(id = sage_progress)
+      set.seed(importance_seed + iteration)
+
+      variable_order <- sample(predictors)
+      reference_rows <- sample.int(nrow(test_predictors))
+      current_data <- test_predictors[reference_rows, , drop = FALSE]
+      loss_before <- log_loss(
+        test$status_bad,
+        predict_model(model, current_data)
+      )
+      iteration_values <- vector("list", length(variable_order))
+
+      for (position in seq_along(variable_order)) {
+        variable <- variable_order[[position]]
+        current_data[[variable]] <- test_predictors[[variable]]
+        loss_after <- log_loss(
+          test$status_bad,
+          predict_model(model, current_data)
+        )
+
+        iteration_values[[position]] <- tibble::tibble(
+          model = model_name,
+          sample = "test",
+          metric = "log_loss",
+          method = "sage",
+          variable = variable,
+          iteration = iteration,
+          importance = loss_before - loss_after,
+          loss_before,
+          loss_after
+        )
+
+        loss_before <- loss_after
+      }
+
+      dplyr::bind_rows(iteration_values)
+    })
+  }
+)
+
+cli::cli_progress_done(id = sage_progress)
+
+# 4. Global SHAP ----------------------------------------------------------
 shap_global_importance <- shap_artifact$shap_values |>
   dplyr::summarise(
     importance = mean(abs(shap)),
@@ -77,7 +212,7 @@ importance_values <- dplyr::bind_rows(
 )
 
 importance_artifact <- list(
-  predictors = credit_models$predictors,
+  predictors = predictors,
   importance_values = importance_values,
   metadata = c(
     credit_models$metadata,
