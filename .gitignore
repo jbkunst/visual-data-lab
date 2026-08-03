@@ -19,3 +19,5 @@ rchessbase/data/*
 /docs/
 /site-build-report.json
 /site-assets/screenshots/
+
+/R/credit-data/credit-models.rds
