@@ -15,12 +15,56 @@ credit_models <- readRDS("R/credit-data/credit-models.rds")
 test_predictors <- credit_models$test |>
   dplyr::select(dplyr::all_of(credit_models$predictors))
 
+control_meta <- credit_models$predictors |>
+  stats::setNames(credit_models$predictors) |>
+  purrr::map(function(variable) {
+    values <- credit_models$train[[variable]]
+
+    list(
+      min = min(values),
+      max = max(values),
+      value = unname(stats::median(values))
+    )
+  })
+
 # Test is both the explained population and the SHAP background.
-shap_values <- calculate_shap_values(
-  models = credit_models$models,
-  explanation_data = test_predictors,
-  background = test_predictors,
-  seed = shap_seed
+shap_values <- purrr::imap_dfr(
+  credit_models$models,
+  function(model, model_name) {
+    progress_id <- cli::cli_progress_bar(
+      name = paste("SHAP:", model$label),
+      total = nrow(test_predictors),
+      format = paste(
+        "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
+        "| {cli::pb_current}/{cli::pb_total} | ETA: {cli::pb_eta}"
+      )
+    )
+
+    values <- purrr::map_dfr(seq_len(nrow(test_predictors)), function(row_id) {
+      cli::cli_progress_update(id = progress_id)
+
+      shap <- local_shap_trace_optimized(
+        model,
+        x = test_predictors[row_id, , drop = FALSE],
+        background = test_predictors,
+        seed = shap_seed
+      ) |>
+        dplyr::summarise(
+          shap = mean(diff),
+          .by = variable
+        )
+
+      tibble::tibble(
+        model = model_name,
+        row_id = row_id,
+        variable = as.character(shap$variable),
+        shap = shap$shap
+      )
+    })
+
+    cli::cli_progress_done(id = progress_id)
+    values
+  }
 )
 
 expected_rows <- length(credit_models$models) *
@@ -36,7 +80,7 @@ shap_artifact <- list(
   predictors = credit_models$predictors,
   models = credit_models$models,
   predictions = credit_models$predictions,
-  control_meta = credit_models$control_meta,
+  control_meta = control_meta,
   baseline = credit_models$baseline,
   shap_values = shap_values,
   metadata = c(
