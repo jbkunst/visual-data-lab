@@ -1,9 +1,7 @@
 predict_model <- function(model, newdata) {
   fit <- model$fit
 
-  if (identical(model$type, "xgboost") && is.raw(fit)) {
-    fit <- xgboost::xgb.load.raw(fit)
-  }
+  if (identical(model$type, "xgboost") && is.raw(fit)) fit <- xgboost::xgb.load.raw(fit)
 
   prediction <- switch(
     model$type,
@@ -97,6 +95,24 @@ save_credit_artifact <- function(object, path) {
 log_loss <- function(actual, predicted, epsilon = 1e-15) {
   predicted <- pmin(pmax(as.numeric(predicted), epsilon), 1 - epsilon)
   -mean(actual * log(predicted) + (1 - actual) * log(1 - predicted))
+}
+
+auc_roc <- function(actual, predicted) {
+  actual <- as.integer(actual)
+  n_positive <- sum(actual == 1L)
+  n_negative <- sum(actual == 0L)
+
+  if (!n_positive || !n_negative) stop("AUC requires both outcome classes.")
+
+  ranks <- rank(predicted, ties.method = "average")
+  (
+    sum(ranks[actual == 1L]) - n_positive * (n_positive + 1) / 2
+  ) / (n_positive * n_negative)
+}
+
+# Permutation importance expects a loss: larger values must be worse.
+one_minus_auc <- function(actual, predicted) {
+  1 - auc_roc(actual, predicted)
 }
 
 local_shap_trace_optimized <- function(model, x, background, seed = 1L) {

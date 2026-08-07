@@ -13,7 +13,7 @@ pak::pkg_install("jbkunst/celavi")
 Then run from the repository root:
 
 ```r
-source("R/credit-data/99-prepare-all.R")
+source("R/credit-data/06-prepare-combined.R")
 ```
 
 The stages can also be run separately:
@@ -23,6 +23,7 @@ The stages can also be run separately:
 3. `03-prepare-effects.R`: ICE and ALE values.
 4. `04-prepare-importance.R`: Permutation, Drop-column, SAGE and global SHAP.
 5. `05-prepare-evaluation.R`: ROC/KS thresholds, gains, AUC, Gini and KS.
+6. `06-prepare-combined.R`: run stages 01 to 05 and consolidate their artifacts.
 
 ## Intermediate model artifact
 
@@ -49,7 +50,7 @@ The models are reduced with `butcher` after prediction equivalence is checked. X
 
 ## Importance methods
 
-Permutation importance is calculated with `celavi` and log-loss. Drop-column models are retrained from the original training sample. SAGE uses a marginal Monte Carlo path approximation with test rows as the reference distribution. Global SHAP is calculated as `mean(abs(shap))`, so it measures prediction movement rather than loss.
+Permutation importance is calculated with `celavi` over 100 iterations for both log-loss and `1 - AUC ROC`. Drop-column models are retrained from the original training sample. SAGE uses a marginal Monte Carlo path approximation with test rows as the reference distribution. Global SHAP is calculated as `mean(abs(shap))`, so it measures prediction movement rather than loss.
 
 ## App artifacts
 
@@ -58,6 +59,25 @@ Permutation importance is calculated with `celavi` and log-loss. Drop-column mod
 - `global-feature-importance/credit-importance.rds`
 - `model-evaluation/credit-evaluation.rds`
 
-These four artifacts share identifiers and conventions, so a future combined app can load and reuse them without recalculating the methods. None includes the training sample.
+## Combined artifact
+
+`06-prepare-combined.R` creates:
+
+```text
+R/credit-data/credit-analysis.rds
+```
+
+It is a self-contained analysis artifact. Common objects are stored once:
+
+- `train`, `test`, `predictors`, `models`, `predictions` and `baseline`;
+- SHAP, ICE and ALE values under `explanations`;
+- all global importance results in `importance_values`;
+- threshold, gains and summary results under `evaluation`;
+- common metadata once, plus method-specific metadata.
+
+`status_bad` is stored in `test`, not repeated inside every model prediction.
+Likewise, gains scores are recovered from `predictions` by `model` and `row_id`.
+
+The four app-specific artifacts do not contain the training sample. The combined artifact stores it once so it can also support auditing and retraining without loading the intermediate model artifact.
 
 This PR only prepares the artifacts. It does not yet change the existing `shap-explorer` app to read the new path or schema.

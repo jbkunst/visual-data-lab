@@ -3,16 +3,20 @@ missing_packages <- required_packages[
   !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
 ]
 
-if (length(missing_packages)) {
-  stop("Install missing packages: ", paste(missing_packages, collapse = ", "))
-}
+if (length(missing_packages)) stop("Install missing packages: ", paste(missing_packages, collapse = ", "))
 
 source("R/credit-data/00-helpers.R", local = TRUE)
+
+# 1. Preparación ----------------------------------------------------------
+cli::cli_h1("Preparación")
 
 credit_models <- readRDS("R/credit-data/credit-models.rds")
 predictions <- credit_models$predictions
 
-# The same threshold table feeds ROC and KS.
+# 2. ROC y KS -------------------------------------------------------------
+cli::cli_h1("ROC y KS")
+
+# La misma tabla de umbrales alimenta las curvas ROC y la distancia KS.
 threshold_curve <- predictions |>
   dplyr::group_by(model) |>
   dplyr::group_modify(function(data, key) {
@@ -52,7 +56,10 @@ threshold_curve <- predictions |>
   }) |>
   dplyr::ungroup()
 
-# The same ordered table feeds cumulative gains, Lorenz-style views and lift.
+# 3. Ganancia y lift ------------------------------------------------------
+cli::cli_h1("Ganancia y lift")
+
+# La misma tabla ordenada alimenta ganancia acumulada, vistas tipo Lorenz y lift.
 gains_curve <- predictions |>
   dplyr::group_by(model) |>
   dplyr::group_modify(function(data, key) {
@@ -84,6 +91,9 @@ gains_curve <- predictions |>
   }) |>
   dplyr::ungroup()
 
+# 4. Resumen --------------------------------------------------------------
+cli::cli_h1("Resumen")
+
 evaluation_summary <- purrr::map_dfr(
   unique(predictions$model),
   function(model_name) {
@@ -96,12 +106,7 @@ evaluation_summary <- purrr::map_dfr(
 
     actual <- model_predictions$status_bad
     predicted <- model_predictions$score
-    n_positive <- sum(actual == 1L)
-    n_negative <- sum(actual == 0L)
-    ranks <- rank(predicted, ties.method = "average")
-    auc <- (
-      sum(ranks[actual == 1L]) - n_positive * (n_positive + 1) / 2
-    ) / (n_positive * n_negative)
+    auc <- auc_roc(actual, predicted)
 
     tibble::tibble(
       model = model_name,
@@ -114,6 +119,9 @@ evaluation_summary <- purrr::map_dfr(
     )
   }
 )
+
+# 5. Artefacto ------------------------------------------------------------
+cli::cli_h1("Artefacto")
 
 evaluation_artifact <- list(
   predictions = predictions,
