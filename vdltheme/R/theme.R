@@ -8,7 +8,7 @@
 #' @return A `bslib` theme.
 #' @export
 theme_vdl <- function(
-  base_font = bslib::font_google("IBM Plex Sans"),
+  base_font = bslib::font_google("IBM Plex Sans", local = FALSE),
   tooltip_bg = "#f1f3f5",
   tooltip_color = "#343a40",
   ...
