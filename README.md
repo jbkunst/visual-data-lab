@@ -83,7 +83,7 @@ Replace `kmeans` with the app folder name. Screenshots are source assets and sho
 
 If a Shinylive app cannot be exported, the build fails. Move it to the server runtime only when there is a deliberate reason to host it on Posit Connect Cloud.
 
-## Shared App Theme
+## Shared Theme and Visual Style
 
 Apps use the shared `vdltheme` package and its bundled IBM Plex Sans font:
 
@@ -98,6 +98,24 @@ Only call `highcharter_theme_vdl()` in apps that use Highcharts. Pokémon and
 Matrix keep their own visual themes; all other apps and `app-template` use
 `theme_vdl()`.
 
+The shared package is the source of truth for the common visual language:
+
+- IBM Plex Sans is bundled in `vdltheme`; apps must not depend on Google Fonts
+  or another network font at runtime.
+- Bootstrap colors flow into the default Highcharts palette in this order:
+  primary, danger, warning, success, info, and secondary.
+- Highcharts legends use normal-weight text, line and scatter markers are
+  circles, and chart tooltips use the same light treatment as input help.
+- Use the shared theme defaults before adding app-specific colors or CSS.
+  Credit-risk apps may keep their semantic palette: red increases bad-risk
+  probability, blue decreases it, and dark blue identifies the active case.
+- Prefer `highchartProxy()` when an interaction only changes series data,
+  categories, plot lines, or the active observation. Re-render the full widget
+  only when its structure changes.
+- Keep labels and educational copy short. Put the app explanation in a closed
+  accordion before `credits.md`, using `readme.md` for "How it works" and
+  optional `resources.md` for references.
+
 For Posit Connect Cloud, install the tagged package locally before regenerating
 the app manifest. Do not install packages from inside `app.R`:
 
@@ -111,6 +129,91 @@ remotes::install_github(
 
 rsconnect::writeManifest(appDir = "app-folder")
 ```
+
+## WebAssembly Releases for Shinylive
+
+Shinylive cannot install the regular Linux or Windows build of a repository
+package. `vdltheme` therefore has a tagged WebAssembly build attached to each
+package release. The workflow is defined in
+`.github/workflows/release-vdltheme-wasm.yml` and uses `r-wasm/actions`.
+
+The workflow's known-good build configuration is intentional:
+
+- run on `ubuntu-24.04`;
+- check out the `vdltheme-v<version>` release tag, not the moving `master`
+  branch;
+- check out `r-wasm/actions` with `ref: v3` into `.actions`;
+- invoke the local composite action with `uses: ./.actions/build-rwasm`;
+- build `packages: "./vdltheme"` with
+  `webr-image: ghcr.io/r-wasm/webr:main`;
+- grant `contents: write` and upload the generated files back to the same
+  release tag.
+
+Earlier `v1` and reusable-workflow variants were not compatible with this
+working build. Do not downgrade or simplify these pins without validating a
+complete release and a Shinylive export. The tag prefix also matters: the job
+runs only for tags beginning with `vdltheme-v`.
+
+When changing `vdltheme`:
+
+1. Bump `Version` in `vdltheme/DESCRIPTION` and commit the complete package
+   change.
+2. Push the commit, then publish a tag named `vdltheme-v<version>`:
+
+   ```sh
+   gh release create vdltheme-v0.0.4 \
+     --target master \
+     --title vdltheme-v0.0.4 \
+     --generate-notes
+   ```
+
+3. Confirm that **Release vdltheme WebAssembly** succeeds. It attaches
+   `library.data.gz` and `library.js.metadata` to the GitHub release.
+4. Install that exact tag locally before testing Shinylive or regenerating a
+   Posit Connect manifest:
+
+   ```r
+   remotes::install_github(
+     "jbkunst/visual-data-lab",
+     subdir = "vdltheme",
+     ref = "vdltheme-v0.0.4",
+     upgrade = "never",
+     force = TRUE
+   )
+   ```
+
+   Installing directly from the local `vdltheme/` directory is not equivalent:
+   it omits the GitHub `Remote*` metadata that Shinylive uses to locate the
+   package's Wasm release. The Pages workflow installs the tagged GitHub package
+   for the same reason.
+
+5. Update the matching `vdltheme` ref in `.github/workflows/pages.yml`. Rewrite
+   manifests for server apps whose deployment uses the new package version.
+6. Push the source changes and let the Pages workflow export all Shinylive
+   apps. Do not commit its generated `docs/` output.
+
+The release workflow can also rebuild an existing tag manually:
+
+```sh
+gh workflow run release-vdltheme-wasm.yml -f tag=vdltheme-v0.0.4
+```
+
+Keep the package release, the locally installed tag, the Pages workflow ref,
+and server-app manifests on the same version. A release is not ready for
+Shinylive until both Wasm assets exist. Package dependencies must themselves be
+available to webR, and runtime assets such as fonts must be bundled in the
+package rather than fetched from the internet.
+
+If export reports `vdltheme not available in Wasm binary repository`, check in
+this order:
+
+1. the package version matches the release tag;
+2. the release contains both Wasm assets;
+3. the local package was installed with `remotes::install_github()` from that
+   exact tag;
+4. `.github/workflows/pages.yml` references the same tag;
+5. the browser is not trying to fetch a runtime asset such as
+   `fonts.googleapis.com`—IBM Plex Sans must come from `vdltheme/inst/fonts`.
 
 ## Input Help and Tooltips
 
@@ -181,6 +284,12 @@ Each parameter controls a different level of spacing:
 Pass plots and widgets directly to the configured `card()` helper so its wrapper
 is applied. An explicit `card_body()` without `padding = 0` restores Bootstrap's
 default card padding and bypasses this convention.
+
+Use `col_widths` and `row_heights` explicitly when the composition matters; a
+2-by-2 comparison should normally use equal column widths and
+`row_heights = c(1, 1)`. Prefer these `bslib` layout arguments over custom CSS
+for page padding, card gaps, or card-body spacing. Keep app-specific exceptions
+inside the app instead of expanding the shared theme into a layout framework.
 
 ## Build
 

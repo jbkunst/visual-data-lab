@@ -8,7 +8,7 @@ on:
       tag:
         description: Existing vdltheme release tag
         required: true
-        default: vdltheme-v0.0.1
+        type: string
 
 jobs:
   build-wasm:
