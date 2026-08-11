@@ -9,6 +9,8 @@ library(shinyWidgets)
 
 source("vdl-theme.R", local = TRUE)
 
+options(highcharter.google_fonts = FALSE)
+
 # theme options -----------------------------------------------------------
 apptheme <- theme_vdl()
 

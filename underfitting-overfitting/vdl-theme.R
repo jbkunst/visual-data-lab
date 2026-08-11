@@ -1,5 +1,5 @@
 theme_vdl <- function(
-  base_font = bslib::font_google("IBM Plex Sans", local = FALSE),
+  base_font = "system-ui",
   tooltip_bg = "#f1f3f5",
   tooltip_color = "#343a40",
   ...
@@ -21,7 +21,7 @@ theme_vdl <- function(
 highcharter_theme_vdl <- function(...) {
   theme <- theme_vdl()
   defaults <- highcharter::hc_theme(
-    chart = list(style = list(fontFamily = "IBM Plex Sans, sans-serif")),
+    chart = list(style = list(fontFamily = "system-ui")),
     legend = list(itemStyle = list(fontWeight = "normal")),
     colors = unname(bslib::bs_get_variables(
       theme,
