@@ -124,7 +124,10 @@ ui <- page_fillable(
         choices = stats::setNames(names(models), model_labels),
         selected = "logistic"),
       actionButton("random_profile", "Random case", class = "btn-primary btn-sm w-100"),
-      tags$small("Selects one observation from the test sample."),
+      tags$small(
+        "Selects one observation from the test sample.",
+        class = "text-muted fst-italic"
+      ),
       accordion(
         open = FALSE,
         accordion_panel(
