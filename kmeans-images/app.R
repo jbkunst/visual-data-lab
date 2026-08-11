@@ -12,11 +12,12 @@ library(imager)
 library(plotly)
 library(markdown) # needed by htmltools::includeMarkdown in Shinylive
 library(shinyWidgets)
+library(vdltheme)
 
 # theme options -----------------------------------------------------------
 thematic::thematic_shiny(font = "auto")
 
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 

@@ -4,9 +4,10 @@ library(bslib)
 library(highcharter)
 library(tibble)
 library(markdown)
+library(vdltheme)
 
 # theme -------------------------------------------------------------------
-apptheme <- bs_theme(primary = "#007BC2")
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300, padding = "0.75rem")
 card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
@@ -62,7 +63,7 @@ metric_descriptions <- c(
 threshold_color <- "#D9A441"
 
 options(
-  highcharter.theme = hc_theme_smpl(
+  highcharter.theme = highcharter_theme_vdl(
     exporting = list(enabled = FALSE),
     credits = list(enabled = FALSE),
     legend = list(itemStyle = list(fontWeight = "normal")),

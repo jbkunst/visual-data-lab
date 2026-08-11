@@ -7,11 +7,12 @@ library(stringr)
 library(scales)
 library(markdown)
 library(broom)
+library(vdltheme)
 library(risk3r)       # remotes::install_github("jbkunst/risk3r", force = TRUE)
 library(klassets)     # remotes::install_github("jbkunst/klassets", force = TRUE)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 

@@ -6,9 +6,10 @@ library(ggplot2)
 library(dplyr)
 library(markdown)
 library(shinyWidgets)
+library(vdltheme)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 

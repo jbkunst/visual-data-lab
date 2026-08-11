@@ -3,22 +3,16 @@ library(shiny)
 library(bslib)
 library(highcharter)
 library(markdown)
+library(vdltheme)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
 card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
-options(
-  highcharter.theme = hc_theme(
-    chart = list(style = list(fontFamily =  "system-ui")),
-    legend = list(itemStyle = list(fontWeight = "normal")),
-    xAxis = list(gridLineWidth = 1),
-    colors = unname(bs_get_variables(apptheme, c("primary", "danger", "success",  "warning", "info", "secondary")))
-    )
-  )
+options(highcharter.theme = highcharter_theme_vdl())
 
 # app options -------------------------------------------------------------
 LAG_MAX  <- 10

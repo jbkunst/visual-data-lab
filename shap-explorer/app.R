@@ -6,6 +6,7 @@ library(rpart)
 library(randomForest)
 library(xgboost)
 library(highcharter)
+library(vdltheme)
 
 # data --------------------------------------------------------------------
 app_dir <- if (file.exists("shap-credit.rds")) "." else "shap-explorer"
@@ -83,33 +84,13 @@ make_slider <- function(variable) {
 }
 
 # theme -------------------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(sidebar, width = 300)
 card <- purrr::partial(card, full_screen = TRUE,
   wrapper = purrr::partial(card_body, padding = 0))
 
-options(
-  highcharter.theme = hc_theme(
-    chart = list(style = list(fontFamily = "system-ui")),
-    legend = list(itemStyle = list(fontWeight = "normal")),
-    colors = unname(bs_get_variables(
-      apptheme,
-      c("primary", "danger", "warning", "success", "info", "secondary")
-    )),
-    tooltip = list(valueDecimals = 3, shared = TRUE,
-      style = list(fontWeight = "normal")),
-    xAxis = list(
-      gridLineWidth = 1,
-      labels = list(style = list(fontWeight = "normal", textOutline = "none")),
-      title = list(style = list(fontWeight = "normal"))
-    ),
-    yAxis = list(
-      labels = list(style = list(fontWeight = "normal", textOutline = "none")),
-      title = list(style = list(fontWeight = "normal"))
-    )
-  )
-)
+options(highcharter.theme = highcharter_theme_vdl())
 
 # ui ----------------------------------------------------------------------
 ui <- page_fillable(

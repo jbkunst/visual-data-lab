@@ -1,9 +1,10 @@
 # packages ----------------------------------------------------------------
 library(shiny)
 library(bslib)
+library(vdltheme)
 
 # theme -------------------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 

@@ -10,11 +10,12 @@ library(uwot)
 library(vegan)
 library(markdown)
 library(shinyWidgets)
+library(vdltheme)
 
 # theme options -----------------------------------------------------------
 thematic::thematic_shiny(font = "auto")
 
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))

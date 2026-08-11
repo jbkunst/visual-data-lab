@@ -83,6 +83,35 @@ Replace `kmeans` with the app folder name. Screenshots are source assets and sho
 
 If a Shinylive app cannot be exported, the build fails. Move it to the server runtime only when there is a deliberate reason to host it on Posit Connect Cloud.
 
+## Shared App Theme
+
+Apps use the shared `vdltheme` package and its bundled IBM Plex Sans font:
+
+```r
+library(vdltheme)
+
+apptheme <- theme_vdl()
+options(highcharter.theme = highcharter_theme_vdl())
+```
+
+Only call `highcharter_theme_vdl()` in apps that use Highcharts. Pokémon and
+Matrix keep their own visual themes; all other apps and `app-template` use
+`theme_vdl()`.
+
+For Posit Connect Cloud, install the tagged package locally before regenerating
+the app manifest. Do not install packages from inside `app.R`:
+
+```r
+remotes::install_github(
+  "jbkunst/visual-data-lab",
+  subdir = "vdltheme",
+  ref = "vdltheme-v0.0.2",
+  upgrade = "never"
+)
+
+rsconnect::writeManifest(appDir = "app-folder")
+```
+
 ## Input Help and Tooltips
 
 Use input tooltips conservatively. Add them only when a control represents a non-obvious statistical or mathematical concept, uses a confusing scale, changes the result conceptually, or needs context that does not fit naturally in its label.
@@ -99,10 +128,10 @@ Use input tooltips conservatively. Add them only when a control represents a non
 - Keep tooltip theming minimal; a softer dark background preserves Bootstrap's default white text.
 - Test the icon at normal and narrow widths and verify the interaction directly in the running app.
 
-Configure the tooltip appearance once in the app theme:
+Customize the shared tooltip appearance only when an app needs it:
 
 ```r
-apptheme <- bs_theme("tooltip-bg" = "#495057")
+apptheme <- theme_vdl(tooltip_bg = "#495057")
 ```
 
 Use this pattern, adapting the outer wrapper to the existing label:

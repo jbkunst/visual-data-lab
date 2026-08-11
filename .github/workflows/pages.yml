@@ -53,12 +53,13 @@ jobs:
             github::jbkunst/klassets@v0.1.2
             github::jbkunst/celavi@v0.1.2
             github::jbkunst/risk3r@v0.1.2
+            github::jbkunst/visual-data-lab/vdltheme@vdltheme-v0.0.2
 
       - name: Cache Shinylive assets and packages
         uses: actions/cache@v4
         with:
           path: ~/.cache/shinylive
-          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R') }}
+          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R', 'vdltheme/**') }}
           restore-keys: |
             ${{ runner.os }}-shinylive-
 
