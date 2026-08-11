@@ -1,0 +1,4 @@
+Title: Model Evaluation
+Description: Compare discrimination and ranking performance for credit-risk models using ROC, KS, gains, lift, and summary metrics.
+Categories: machine learning, model evaluation, credit risk
+Status: draft
