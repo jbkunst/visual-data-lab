@@ -50,7 +50,6 @@ jobs:
             any::tibble
             any::webshot2
             any::yaml
-            github::jbkunst/visual-data-lab/vdltheme@vdltheme-v0.0.1
             github::jbkunst/klassets@v0.1.2
             github::jbkunst/celavi@v0.1.2
             github::jbkunst/risk3r@v0.1.2
@@ -59,7 +58,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/shinylive
-          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R', 'vdltheme/**') }}
+          key: ${{ runner.os }}-shinylive-${{ hashFiles('**/app.R') }}
           restore-keys: |
             ${{ runner.os }}-shinylive-
 

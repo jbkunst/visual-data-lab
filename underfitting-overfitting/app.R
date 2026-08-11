@@ -6,7 +6,8 @@ library(tibble)
 library(highcharter)
 library(markdown)
 library(shinyWidgets)
-library(vdltheme)
+
+source("vdl-theme.R", local = TRUE)
 
 # theme options -----------------------------------------------------------
 apptheme <- theme_vdl()
