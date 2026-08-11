@@ -180,6 +180,11 @@ drop_column_importance <- purrr::imap_dfr(
 # 4. SAGE ----------------------------------------------------------------
 cli::cli_h1("SAGE")
 
+sage_losses <- list(
+  log_loss = log_loss,
+  `1_minus_auc_roc` = one_minus_auc
+)
+
 sage_importance <- purrr::imap_dfr(
   models,
   function(model_object, model_name) {
@@ -193,33 +198,36 @@ sage_importance <- purrr::imap_dfr(
       variable_order <- sample(predictors)
       reference_rows <- sample.int(nrow(test_predictors))
       current_data <- test_predictors[reference_rows, , drop = FALSE]
-      loss_before <- log_loss(
-        test$status_bad,
-        predict_model(model_object, current_data)
+      score_before <- predict_model(model_object, current_data)
+      losses_before <- purrr::map_dbl(
+        sage_losses,
+        ~ .x(test$status_bad, score_before)
       )
       iteration_values <- vector("list", length(variable_order))
 
       for (position in seq_along(variable_order)) {
         variable <- variable_order[[position]]
         current_data[[variable]] <- test_predictors[[variable]]
-        loss_after <- log_loss(
-          test$status_bad,
-          predict_model(model_object, current_data)
+        score_after <- predict_model(model_object, current_data)
+        losses_after <- purrr::map_dbl(
+          sage_losses,
+          ~ .x(test$status_bad, score_after)
         )
 
         iteration_values[[position]] <- tibble::tibble(
           model = model_name,
           sample = "test",
-          metric = "log_loss",
+          metric = names(sage_losses),
           method = "sage",
           variable = variable,
           iteration = iteration,
-          importance = loss_before - loss_after,
-          loss_before,
-          loss_after
+          position = position,
+          importance = losses_before - losses_after,
+          loss_before = losses_before,
+          loss_after = losses_after
         )
 
-        loss_before <- loss_after
+        losses_before <- losses_after
       }
 
       result <- dplyr::bind_rows(iteration_values)
@@ -271,6 +279,7 @@ importance_artifact <- list(
         permutation_metrics = names(permutation_losses),
         permutation_iterations = permutation_iterations,
         sage_implementation = "marginal Monte Carlo path approximation",
+        sage_metrics = names(sage_losses),
         sage_iterations = sage_iterations,
         seed = importance_seed,
         shap_global = "mean(abs(shap))"

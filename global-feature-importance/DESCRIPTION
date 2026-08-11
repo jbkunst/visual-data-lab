@@ -1,0 +1,4 @@
+Title: Global Feature Importance
+Description: Compare how four global importance methods rank the variables used by credit-risk models.
+Categories: machine learning, explainability, credit risk
+Status: draft
