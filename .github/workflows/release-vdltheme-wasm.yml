@@ -3,20 +3,54 @@ name: Release vdltheme WebAssembly
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vdltheme release tag
+        required: true
+        default: vdltheme-v0.0.1
 
 jobs:
   build-wasm:
-    if: startsWith(github.event.release.tag_name, 'vdltheme-v')
-    uses: r-wasm/actions/.github/workflows/release-file-system-image.yml@v1
-    with:
-      packages: "./vdltheme"
-      strip: "demo, doc, examples, help, html, include, tests, vignette"
+    if: startsWith(github.event.release.tag_name || inputs.tag, 'vdltheme-v')
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       repository-projects: read
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - name: Checkout r-wasm actions
+        uses: actions/checkout@v6
+        with:
+          ref: v1
+          repository: r-wasm/actions
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: .actions
+
+      - name: Build Wasm image
+        uses: ./.actions/build-rwasm
+        with:
+          packages: "./vdltheme"
+          strip: "demo, doc, examples, help, html, include, tests, vignette"
+          image-path: ._rwasm
+          webr-image: ghcr.io/r-wasm/webr:main
+
+      - name: Upload Wasm image to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$RELEASE_TAG" ._rwasm/* --clobber
 
   rebuild-site:
-    if: startsWith(github.event.release.tag_name, 'vdltheme-v')
     needs: build-wasm
     runs-on: ubuntu-latest
     permissions:
