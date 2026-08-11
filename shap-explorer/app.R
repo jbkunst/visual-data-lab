@@ -427,16 +427,19 @@ server <- function(input, output, session) {
       hc_plotOptions(column = list(borderWidth = 0, groupPadding = 0, pointPadding = 0)) |>
       hc_add_series(
         id = "pd_line", name = "Predicted PD", type = "line",
-        data = data$line, color = "#d95f59", dashStyle = "ShortDash",
+        data = data$line, color = "#34495e", dashStyle = "ShortDash",
         lineWidth = 2, marker = list(enabled = FALSE),
         dataLabels = list(
           enabled = TRUE, align = "left", x = 5, y = 4,
           crop = FALSE, overflow = "allow",
-          style = list(color = "#d95f59", fontWeight = "normal", textOutline = "none"),
+          style = list(
+            color = "#495057", fontSize = "13px",
+            fontWeight = "600", textOutline = "none"
+          ),
           formatter = JS(paste(
             "function () {",
             "  if (this.point.index !== 1) return null;",
-            "  return 'Predicted PD: ' + Highcharts.numberFormat(100 * this.x, 1) + '%';",
+            "  return Highcharts.numberFormat(100 * this.x, 1) + '%';",
             "}"
           ))
         )
@@ -460,17 +463,18 @@ server <- function(input, output, session) {
       hc_plotOptions(scatter = list(marker = list(symbol = "circle"))) |>
       hc_add_series(
         id = "dependence", name = "Test sample", data = data$points,
-        color = "rgba(59, 130, 196, 0.45)",
+        color = "rgba(224, 224, 224, 0.65)", zIndex = 1,
         marker = list(radius = 3, symbol = "circle")
       ) |>
       hc_add_series(
         id = "trend", name = "Trend", type = "line", data = data$trend,
-        color = "#6c757d", lineWidth = 2, marker = list(enabled = FALSE),
+        color = "#6c757d", lineWidth = 2, zIndex = 2,
+        marker = list(enabled = FALSE),
         enableMouseTracking = FALSE
       ) |>
       hc_add_series(
         id = "active", name = "Current profile", data = data$active,
-        color = "#d95f59",
+        color = "#34495e", zIndex = 3,
         marker = list(
           radius = 6, symbol = "circle", lineColor = "white", lineWidth = 2
         )
