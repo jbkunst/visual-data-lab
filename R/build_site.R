@@ -1,3 +1,6 @@
+# This script is executed by GitHub Actions. Do not run it locally: it rebuilds
+# generated outputs such as apps.yml and docs/.
+
 # packages ---------------------------------------------------------------
 library(dplyr)
 library(purrr)
