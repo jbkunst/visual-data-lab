@@ -107,6 +107,7 @@ cli::cli_h1("Find apps")
 
 app_dirs <- dir() |>
   keep(~ file_exists(path(.x, "DESCRIPTION"))) |>
+  keep(~ file_exists(path(.x, "app.R")) || file_exists(path(.x, "global.R"))) |>
   discard(~ .x %in% c("app-template", "docs")) |>
   discard(~ startsWith(.x, "."))
 
