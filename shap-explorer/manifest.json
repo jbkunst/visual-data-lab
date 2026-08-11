@@ -1977,6 +1977,38 @@
         "Archs": "x64"
       }
     },
+    "vdltheme": {
+      "Source": "github",
+      "Repository": null,
+      "description": {
+        "Package": "vdltheme",
+        "Title": "Visual Data Lab Themes",
+        "Version": "0.0.2",
+        "Authors@R": "person(\"Joshua\", \"Kunst\", email = \"jbkunst@gmail.com\", role = c(\"aut\", \"cre\"))",
+        "Description": "Shared Bootstrap and Highcharts themes for Visual Data Lab applications.",
+        "License": "MIT + file LICENSE",
+        "Encoding": "UTF-8",
+        "URL": "https://github.com/jbkunst/visual-data-lab/tree/master/vdltheme",
+        "Imports": "bslib, highcharter, htmltools",
+        "RemoteType": "github",
+        "RemoteHost": "api.github.com",
+        "RemoteRepo": "visual-data-lab",
+        "RemoteUsername": "jbkunst",
+        "RemoteRef": "vdltheme-v0.0.2",
+        "RemoteSha": "e6c57a8fc0dfb7f9d389e0415632b3d1a633401e",
+        "RemoteSubdir": "vdltheme",
+        "GithubRepo": "visual-data-lab",
+        "GithubUsername": "jbkunst",
+        "GithubRef": "vdltheme-v0.0.2",
+        "GithubSHA1": "e6c57a8fc0dfb7f9d389e0415632b3d1a633401e",
+        "GithubSubdir": "vdltheme",
+        "NeedsCompilation": "no",
+        "Packaged": "2026-08-11 22:21:02 UTC; jbkun",
+        "Author": "Joshua Kunst [aut, cre]",
+        "Maintainer": "Joshua Kunst <jbkunst@gmail.com>",
+        "Built": "R 4.6.1; ; 2026-08-11 22:21:02 UTC; windows"
+      }
+    },
     "withr": {
       "Source": "CRAN",
       "Repository": null,
@@ -2180,7 +2212,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "fcf57bad9f8fa86b25450f20be937844"
+      "checksum": "5cb528b61b7b7709f4523b5af342e78d"
     },
     "credits.md": {
       "checksum": "3bc3e08fd06da6533daa2ec18d02552d"
