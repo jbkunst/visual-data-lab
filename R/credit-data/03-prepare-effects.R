@@ -242,6 +242,7 @@ cli::cli_h1("Artefacto")
 effects_artifact <- list(
   test = test,
   predictors = predictors,
+  baseline = credit_models$baseline,
   ice_values = ice_values,
   ale_values = ale_values,
   metadata = c(
