@@ -6,27 +6,15 @@ library(tibble)
 library(highcharter)
 library(markdown)
 library(shinyWidgets)
+library(vdltheme)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme()
+apptheme <- theme_vdl()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
-options(
-  highcharter.theme = hc_theme(
-    chart = list(style = list(fontFamily = "system-ui")),
-    legend = list(itemStyle = list(fontWeight = "normal")),
-    colors = unname(bs_get_variables(apptheme, c("primary", "danger", "warning", "success", "info", "secondary"))),
-    tooltip = list(valueDecimals = 3, shared = TRUE),
-    xAxis = list(gridLineWidth = 1),
-    plotOptions = list(
-      spline = list(marker = list(enabled = FALSE, symbol = "circle")),
-      line = list(marker = list(enabled = FALSE, symbol = "circle")),
-      scatter = list(marker = list(symbol = "circle"))
-    )
-  )
-)
+options(highcharter.theme = highcharter_theme_vdl())
 
 # app options -------------------------------------------------------------
 bandwidth_grid <- round(exp(seq(log(0.1), log(20), length.out = 25)), 2)
@@ -37,6 +25,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "Underfitting and Overfitting",
       shinyWidgets::sliderTextInput(
@@ -49,13 +38,18 @@ ui <- page_fillable(
       ),
       shinyWidgets::sliderTextInput(
         "bandwidth",
-        tags$small("Bandwidth"),
+        tags$small(
+          "Bandwidth",
+          tooltip(
+            bsicons::bs_icon("info-circle", size = "0.75em", class = "ms-1", style = "color:#adb5bd;", a11y = "none", tabindex = "0"),
+            "Controls how many nearby observations are averaged. Smaller values follow local detail; larger values produce a smoother model.", placement = "right"
+          )
+        ),
         choices = c("0.1", "0.5", "1", "2", "3", "4", "5", "10", "20"),
         selected = "2",
         grid = TRUE,
         force_edges = TRUE
       ),
-      tags$small("Smaller values create a more flexible model."),
       checkboxInput("show_test", tags$small("Show test data"), value = FALSE),
       checkboxInput("show_truth", tags$small("Show true relationship"), value = FALSE),
       accordion(
@@ -74,17 +68,18 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(12, 6, 6),
       row_heights = c(3, 2),
+      gap = "0.75rem",
       card(
         card_header("Model fit"),
-        card_body(highchartOutput("chartdata"))
+        highchartOutput("chartdata")
       ),
       card(
         card_header("RMSE at selected bandwidth"),
-        card_body(highchartOutput("charterror"))
+        highchartOutput("charterror")
       ),
       card(
         card_header("RMSE across bandwidths"),
-        card_body(highchartOutput("chartbandwidth"))
+        highchartOutput("chartbandwidth")
       )
     )
   )

@@ -1,0 +1,28 @@
+name: Release vdltheme WebAssembly
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-wasm:
+    if: startsWith(github.event.release.tag_name, 'vdltheme-v')
+    uses: r-wasm/actions/.github/workflows/release-file-system-image.yml@v1
+    with:
+      packages: "./vdltheme"
+      strip: "demo, doc, examples, help, html, include, tests, vignette"
+    permissions:
+      contents: write
+      repository-projects: read
+
+  rebuild-site:
+    if: startsWith(github.event.release.tag_name, 'vdltheme-v')
+    needs: build-wasm
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Rebuild site with the released Wasm package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref master

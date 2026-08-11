@@ -1,0 +1,11 @@
+Package: vdltheme
+Title: Visual Data Lab Themes
+Version: 0.0.1
+Authors@R: person("Joshua", "Kunst", email = "jbkunst@gmail.com", role = c("aut", "cre"))
+Description: Shared Bootstrap and Highcharts themes for Visual Data Lab applications.
+License: MIT + file LICENSE
+Encoding: UTF-8
+URL: https://github.com/jbkunst/visual-data-lab/tree/master/vdltheme
+Imports:
+    bslib,
+    highcharter
