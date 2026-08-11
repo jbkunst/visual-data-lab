@@ -8,7 +8,7 @@
 #' @return A `bslib` theme.
 #' @export
 theme_vdl <- function(
-  base_font = bslib::font_google("IBM Plex Sans", local = FALSE),
+  base_font = font_vdl(),
   tooltip_bg = "#f1f3f5",
   tooltip_color = "#343a40",
   ...
@@ -25,6 +25,22 @@ theme_vdl <- function(
     theme,
     ".tooltip-inner { border: 1px solid #ced4da; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08); }"
   )
+}
+
+font_vdl <- function() {
+  fonts_dir <- system.file("fonts", package = "vdltheme")
+
+  font <- bslib::font_collection("IBM Plex Sans")
+  font$html_deps <- htmltools::tagFunction(function() {
+    htmltools::htmlDependency(
+      name = "ibm-plex-sans-vdl",
+      version = "0.0.2",
+      src = c(file = fonts_dir),
+      stylesheet = "fonts.css"
+    )
+  })
+
+  font
 }
 
 #' Visual Data Lab Highcharts theme

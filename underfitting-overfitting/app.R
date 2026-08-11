@@ -6,8 +6,7 @@ library(tibble)
 library(highcharter)
 library(markdown)
 library(shinyWidgets)
-
-source("vdl-theme.R", local = TRUE)
+library(vdltheme)
 
 options(highcharter.google_fonts = FALSE)
 
