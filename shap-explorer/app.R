@@ -348,7 +348,19 @@ server <- function(input, output, session) {
     highchart() |>
       hc_add_dependency("modules/waterfall.js") |>
       hc_chart(type = "waterfall") |>
-      hc_xAxis(type = "category", plotBands = chart$waterfall_band) |>
+      hc_xAxis(
+        type = "category",
+        plotBands = chart$waterfall_band,
+        labels = list(
+          useHTML = TRUE,
+          formatter = JS(paste(
+            "function () {",
+            "  const anchor = this.value.includes('Background') || this.value.includes('Predicted');",
+            "  return anchor ? '<span style=\"font-weight: 600\">' + this.value + '</span>' : this.value;",
+            "}"
+          ))
+        )
+      ) |>
       hc_yAxis(title = list(text = "Probability of default (%)")) |>
       hc_legend(enabled = FALSE) |>
       hc_tooltip(pointFormat = "{point.y:.1f}") |>
