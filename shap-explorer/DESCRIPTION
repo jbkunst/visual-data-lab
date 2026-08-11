@@ -2,3 +2,4 @@ Title: SHAP Explorer
 Description: Explore how different credit-risk models turn a client profile into a probability of default and SHAP contributions.
 Categories: machine learning, explainability, credit risk
 Runtime: server
+AppURL: https://jbkunst-visual-data-lab.share.connect.posit.cloud
