@@ -14,7 +14,7 @@ Public site:
 - `<app-folder>/readme.md`: short "How it works" content used by the app.
 - `<app-folder>/credits.md`: visible author/signature block.
 - `<app-folder>/screenshot.png`: gallery preview.
-- `R/build_site.R`: builds the gallery and Shinylive exports.
+- `R/build_site.R`: builds the gallery and Shinylive exports in GitHub Actions.
 - `R/run_app.R`: runs an app from a fresh copy of the repository.
 - `index.qmd`: Quarto source for the gallery.
 
@@ -57,8 +57,7 @@ Status: draft
 4. Add `readme.md` and `credits.md`.
 5. Run the app locally and check the interaction.
 6. Generate and commit `screenshot.png`.
-7. Run `source("R/build_site.R")` from the repository root.
-8. Check the generated gallery locally.
+7. Push the changes and let GitHub Actions build and validate the gallery.
 
 Adding a new app should be self-contained in its app folder. **Do not modify `.github/workflows/pages.yml` just to add an app.** App-specific data preparation, models, assets, and other runtime files belong in the app folder and should be committed when they are part of the app.
 
@@ -127,11 +126,10 @@ Before implementing tooltips across an app, list the selected inputs and why eac
 
 ## Build
 
-From an interactive R session at the repository root:
-
-```r
-source("R/build_site.R")
-```
+Do not run `R/build_site.R` locally. The script is part of the GitHub Actions
+workflow and rebuilds generated files such as `apps.yml` and `docs/`. Push the
+source changes and let GitHub Actions execute the build in its controlled
+environment.
 
 The build:
 
@@ -142,8 +140,6 @@ The build:
 5. uses `AppURL` for server apps;
 6. prepares gallery screenshots and `apps.yml`;
 7. renders the Quarto site to `docs/`.
-
-When run interactively, the generated site is served locally on port `8000`.
 
 ## Publishing
 
