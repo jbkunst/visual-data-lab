@@ -8,7 +8,7 @@ library(markdown)
 library(shinyWidgets)
 
 # theme options -----------------------------------------------------------
-apptheme <- bs_theme("tooltip-bg" = "#495057")
+apptheme <- bs_theme()
 
 sidebar <- purrr::partial(bslib::sidebar, width = 300)
 
@@ -45,20 +45,13 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "Lorenz System Parameters",
       withMathJax(),
       sliderInput(
         "sigma",
-        tagList(
-          "\\( \\sigma \\) (sigma):",
-          bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1"),
-            "Controls how quickly x follows y.",
-            placement = "right",
-            options = list(trigger = "hover focus click")
-          )
-        ),
+        "\\( \\sigma \\) (sigma):",
         min = 1,
         max = 20,
         value = 10,
@@ -66,15 +59,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "rho",
-        tagList(
-          "\\( \\rho \\) (rho):",
-          bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1"),
-            "Controls the system's driving strength and whether chaotic behavior emerges.",
-            placement = "right",
-            options = list(trigger = "hover focus click")
-          )
-        ),
+        "\\( \\rho \\) (rho):",
         min = 1,
         max = 50,
         value = 28,
@@ -82,15 +67,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "beta",
-        tagList(
-          "\\( \\beta \\) (beta):",
-          bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1"),
-            "Controls damping in the z direction.",
-            placement = "right",
-            options = list(trigger = "hover focus click")
-          )
-        ),
+        "\\( \\beta \\) (beta):",
         min = 0.1,
         max = 10,
         value = 8/3,
@@ -106,15 +83,7 @@ ui <- page_fillable(
       ),
       shinyWidgets::sliderTextInput(
         "dt",
-        tagList(
-          "Time step (dt):",
-          bslib::tooltip(
-            bsicons::bs_icon("info-circle", class = "ms-1"),
-            "Larger steps cover more time per point but reduce numerical accuracy.",
-            placement = "right",
-            options = list(trigger = "hover focus click")
-          )
-        ),
+        "Time step (dt):",
         choices = c("0.001", "0.002", "0.005", "0.01", "0.02", "0.05"),
         selected = "0.01",
         grid = TRUE,
@@ -132,6 +101,7 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(12, 4, 4, 4),
       row_heights = c(3, 2),
+      gap = "0.75rem",
       card(
         card_header("3D Lorenz Attractor"),
         plotlyOutput("lorenz3d", height = "100%")

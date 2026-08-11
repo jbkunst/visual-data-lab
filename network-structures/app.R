@@ -404,6 +404,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "Network Structures",
 
@@ -464,10 +465,11 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(8, 4, 4, 4, 4),
       row_heights = c(3, 2),
+      gap = "0.75rem",
 
       card(
         card_header(uiOutput("network_title")),
-        card_body(sigmajsOutput("network", height = "100%"))
+        sigmajsOutput("network", height = "100%")
       ),
 
       card(

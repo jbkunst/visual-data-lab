@@ -35,6 +35,7 @@ options(
   highcharter.theme = hc_theme_smpl(
     exporting = list(enabled = FALSE),
     credits = list(enabled = FALSE),
+    legend = list(itemStyle = list(fontWeight = "normal")),
     plotOptions = list(
       series = list(
         dataLabels = list(style = list(fontWeight = "normal", textOutline = "none"))

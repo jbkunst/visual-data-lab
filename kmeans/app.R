@@ -481,6 +481,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "K-means",
       withMathJax(),
@@ -542,11 +543,12 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(8, 4, 4, 4, 4),
       row_heights = c(3, 2),
-      card(card_header(uiOutput("iter_title")), card_body(plotOutput("iter_plot", height = "100%"))),
-      card(card_header("Generated vs assigned"), card_body(plotOutput("assignment_heatmap", height = "100%"))),
-      card(card_header("Within-cluster variation"), card_body(plotOutput("wc", height = "100%"))),
-      card(card_header("Convergence"), card_body(plotOutput("convergence", height = "100%"))),
-      card(card_header("Elbow plot"), card_body(plotOutput("elbow", height = "100%")))
+      gap = "0.75rem",
+      card(card_header(uiOutput("iter_title")), plotOutput("iter_plot", height = "100%")),
+      card(card_header("Generated vs assigned"), plotOutput("assignment_heatmap", height = "100%")),
+      card(card_header("Within-cluster variation"), plotOutput("wc", height = "100%")),
+      card(card_header("Convergence"), plotOutput("convergence", height = "100%")),
+      card(card_header("Elbow plot"), plotOutput("elbow", height = "100%"))
     )
   )
 )

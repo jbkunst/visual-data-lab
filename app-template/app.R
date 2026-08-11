@@ -14,6 +14,8 @@ ui <- page_fillable(
   theme = apptheme,
   padding = 0,
   layout_sidebar(
+    fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "App title",
       accordion(
@@ -25,10 +27,14 @@ ui <- page_fillable(
       ),
       tags$small(htmltools::includeMarkdown("credits.md"))
     ),
-    card(
-      card_header("Main view"),
-      card_body(
-        p("Replace this content with the app UI.")
+    layout_columns(
+      col_widths = 12,
+      gap = "0.75rem",
+      card(
+        card_header("Main view"),
+        card_body(
+          p("Replace this content with the app UI.")
+        )
       )
     )
   )

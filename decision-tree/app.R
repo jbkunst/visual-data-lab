@@ -32,6 +32,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "Decision Tree",
       withMathJax(),
@@ -106,10 +107,11 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(6, 6, 6, 6),
       row_heights = c(3, 2),
-      card(card_body(plotOutput("join_dist", width = "100%", height = "100%"))),
-      card(card_body(plotOutput("tree_plot", width = "100%", height = "100%"))),
-      card(card_body(plotOutput("roc_plot", width = "100%", height = "100%"))),
-      card(card_body(plotOutput("confusion_plot", width = "100%", height = "100%")))
+      gap = "0.75rem",
+      card(plotOutput("join_dist", width = "100%", height = "100%")),
+      card(plotOutput("tree_plot", width = "100%", height = "100%")),
+      card(plotOutput("roc_plot", width = "100%", height = "100%")),
+      card(plotOutput("confusion_plot", width = "100%", height = "100%"))
       )
     )
   )

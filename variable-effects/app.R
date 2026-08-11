@@ -42,7 +42,7 @@ apptheme <- bs_theme()
 sidebar <- purrr::partial(sidebar, width = 300)
 card <- purrr::partial(
   card, full_screen = TRUE,
-  wrapper = purrr::partial(card_body, padding = 12)
+  wrapper = purrr::partial(card_body, padding = 0)
 )
 
 options(
@@ -95,6 +95,7 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(6, 6, 6, 6),
       row_heights = c(1, 1),
+      gap = "0.75rem",
       card(card_header("Partial dependence (PDP)"),
         highchartOutput("pdp_plot", height = "100%")),
       card(card_header(
@@ -139,7 +140,7 @@ server <- function(input, output, session) {
     effect_chart(data$x_title, "Predicted probability of default") |>
       hc_add_series(
         name = "PDP", data = xy_points(data$pdp$x, data$pdp$estimate),
-        color = "#34495e", lineWidth = 3,
+        lineWidth = 3,
         marker = list(enabled = TRUE, radius = 3)
       )
   })
@@ -162,7 +163,7 @@ server <- function(input, output, session) {
     effect_chart(data$x_title, y_title, reference = reference) |>
       hc_add_series(
         name = "ALE", data = xy_points(ale$x, ale$estimate),
-        color = "#34495e", lineWidth = 3,
+        lineWidth = 3,
         marker = list(enabled = TRUE, radius = 3)
       )
   })
@@ -182,7 +183,7 @@ server <- function(input, output, session) {
       hc_add_series_list(series) |>
       hc_add_series(
         name = "PDP", data = xy_points(data$pdp$x, data$pdp$estimate),
-        color = "#34495e", lineWidth = 3, marker = list(enabled = FALSE),
+        lineWidth = 3, marker = list(enabled = FALSE),
         zIndex = 2
       )
   })

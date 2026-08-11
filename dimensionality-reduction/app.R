@@ -762,6 +762,7 @@ ui <- page_fillable(
   ),
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "Dimensionality Reduction",
 
@@ -813,21 +814,22 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(6, 6, 6, 6),
       row_heights = c(1, 1),
+      gap = "0.75rem",
       card(
         card_header("PCA - maximum variance"),
-        card_body(plotlyOutput("pca_plot", height = "100%"))
+        plotlyOutput("pca_plot", height = "100%")
       ),
       card(
         card_header("Isomap - geodesic distances"),
-        card_body(plotlyOutput("isomap_plot", height = "100%"))
+        plotlyOutput("isomap_plot", height = "100%")
       ),
       card(
         card_header("t-SNE - local neighborhoods"),
-        card_body(plotlyOutput("tsne_plot", height = "100%"))
+        plotlyOutput("tsne_plot", height = "100%")
       ),
       card(
         card_header("UMAP - neighborhood graph"),
-        card_body(plotlyOutput("umap_plot", height = "100%"))
+        plotlyOutput("umap_plot", height = "100%")
       )
     )
   )

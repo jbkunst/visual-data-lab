@@ -47,6 +47,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "Binary predictions",
       withMathJax(),
@@ -61,9 +62,9 @@ ui <- page_fillable(
       ),
       tags$small(htmltools::includeMarkdown("credits.md"))
       ),
-    layout_column_wrap(
-      width = 1/2,
-      height = "60%",
+    layout_columns(
+      col_widths = 12,
+      gap = "0.75rem",
       card(highchartOutput("hcpoints"))
       )
     )

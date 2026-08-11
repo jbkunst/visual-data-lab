@@ -122,6 +122,7 @@ ui <- page_fillable(
   tags$style(HTML(".selectize-dropdown-content{max-height:none!important;overflow-y:visible!important;}")),
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "K-means on images",
       withMathJax(),
@@ -142,21 +143,22 @@ ui <- page_fillable(
     layout_columns(
       col_widths = 6,
       row_heights = 1,
+      gap = "0.75rem",
       card(
         card_header("Image"),
-        card_body(plotOutput("originalImage"))
+        plotOutput("originalImage")
         ),
       card(
         card_header(tags$small("Sample of pixels")),
-        card_body(plotlyOutput("scatterplot3d"))
+        plotlyOutput("scatterplot3d")
         ),
       card(
         card_header("Result Image"),
-        card_body(plotOutput("resultImage"))
+        plotOutput("resultImage")
         ),
       card(
         card_header(tags$small("Clustered pixels")),
-        card_body(plotlyOutput("scatterplot3dresults"))
+        plotlyOutput("scatterplot3dresults")
         )
       )
     )

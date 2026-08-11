@@ -8,7 +8,7 @@ library(markdown)
 # theme -------------------------------------------------------------------
 apptheme <- bs_theme(primary = "#007BC2")
 
-sidebar <- purrr::partial(bslib::sidebar, width = 300)
+sidebar <- purrr::partial(bslib::sidebar, width = 300, padding = "0.75rem")
 card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 # app options -------------------------------------------------------------
@@ -65,6 +65,7 @@ options(
   highcharter.theme = hc_theme_smpl(
     exporting = list(enabled = FALSE),
     credits = list(enabled = FALSE),
+    legend = list(itemStyle = list(fontWeight = "normal")),
     plotOptions = list(
       series = list(
         dataLabels = list(style = list(fontWeight = "normal", textOutline = "none"))
@@ -106,6 +107,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "ROC Curve",
 
@@ -146,21 +148,22 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(6, 6, 6, 6),
       row_heights = c(1, 0.72),
+      gap = "0.75rem",
       card(
         card_header("Score distributions"),
-        card_body(highchartOutput("distribution_chart", height = "100%"))
+        highchartOutput("distribution_chart", height = "100%")
       ),
       card(
         card_header("ROC curve"),
-        card_body(highchartOutput("roc_chart", height = "100%"))
+        highchartOutput("roc_chart", height = "100%")
       ),
       card(
         card_header("Confusion matrix"),
-        card_body(highchartOutput("confusion_chart", height = "100%"))
+        highchartOutput("confusion_chart", height = "100%")
       ),
       card(
         card_header("Metrics at threshold"),
-        card_body(highchartOutput("metrics_chart", height = "100%"))
+        highchartOutput("metrics_chart", height = "100%")
       )
     )
   )

@@ -124,6 +124,43 @@ label = tags$small(tagList(
 
 Before implementing tooltips across an app, list the selected inputs and why each one needs help. It is valid for an app to need no tooltips.
 
+## Fillable App Layout
+
+For apps built around a fillable sidebar and cards, use these four parameters as
+the default layout convention:
+
+```r
+card <- purrr::partial(
+  bslib::card,
+  full_screen = TRUE,
+  wrapper = purrr::partial(bslib::card_body, padding = 0)
+)
+
+ui <- page_fillable(
+  padding = 0,
+  layout_sidebar(
+    fillable = TRUE,
+    padding = "0.75rem",
+    sidebar = sidebar(...),
+    layout_columns(
+      gap = "0.75rem",
+      ...
+    )
+  )
+)
+```
+
+Each parameter controls a different level of spacing:
+
+- `page_fillable(padding = 0)` removes spacing around the full application page.
+- `layout_sidebar(padding = "0.75rem")` adds spacing around the main card area.
+- `layout_columns(gap = "0.75rem")` controls the space between cards.
+- `card_body(padding = 0)` lets plots and HTML widgets use the full card body.
+
+Pass plots and widgets directly to the configured `card()` helper so its wrapper
+is applied. An explicit `card_body()` without `padding = 0` restores Bootstrap's
+default card padding and bypasses this convention.
+
 ## Build
 
 Do not run `R/build_site.R` locally. The script is part of the GitHub Actions

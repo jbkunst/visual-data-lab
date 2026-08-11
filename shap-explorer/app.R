@@ -87,7 +87,7 @@ apptheme <- bs_theme()
 
 sidebar <- purrr::partial(sidebar, width = 300)
 card <- purrr::partial(card, full_screen = TRUE,
-  wrapper = purrr::partial(card_body, padding = 12))
+  wrapper = purrr::partial(card_body, padding = 0))
 
 options(
   highcharter.theme = hc_theme(
@@ -140,13 +140,13 @@ ui <- page_fillable(
       tags$small(htmltools::includeMarkdown("credits.md"))
     ),
     layout_columns(
-      col_widths = c(6, 6, 12), row_heights = c(3, 2),
+      col_widths = c(6, 6, 12), row_heights = c(3, 2), gap = "0.75rem",
       card(
         card_header("Local SHAP contributions"),
         highchartOutput("shap_plot", height = "100%")
       ),
       layout_columns(
-        col_widths = 12, row_heights = c(1, 1),
+        col_widths = 12, row_heights = c(1, 1), gap = "0.75rem",
         card(card_header("Portfolio PD distribution"),
           highchartOutput("pd_plot", height = "100%")),
         card(card_header(uiOutput("dependence_title")),

@@ -52,6 +52,7 @@ ui <- page_fillable(
   padding = 0,
   layout_sidebar(
     fillable = TRUE,
+    padding = "0.75rem",
     sidebar = sidebar(
       title = "ARMA model Simulation",
       withMathJax(),
@@ -71,9 +72,10 @@ ui <- page_fillable(
     layout_columns(
       col_widths = c(12, 6, 6),
       row_heights = c(3, 2),
-      card(card_header(uiOutput("model", inline = TRUE)), card_body(highchartOutput("ts"))),
-      card(card_header("ACF"), card_body(highchartOutput("acf"))), 
-      card(card_header("PACF"), card_body(highchartOutput("pacf")))
+      gap = "0.75rem",
+      card(card_header(uiOutput("model", inline = TRUE)), highchartOutput("ts")),
+      card(card_header("ACF"), highchartOutput("acf")),
+      card(card_header("PACF"), highchartOutput("pacf"))
       )
     )
   )
