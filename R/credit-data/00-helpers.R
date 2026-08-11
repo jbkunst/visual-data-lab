@@ -6,7 +6,7 @@ predict_model <- function(model, newdata) {
   prediction <- switch(
     model$type,
     logistic = stats::predict(fit, newdata = newdata, type = "response"),
-    tree = stats::predict(fit, newdata = newdata),
+    tree = stats::predict(fit, newdata = newdata, type = "prob")[, "1"],
     random_forest = stats::predict(fit, newdata = newdata, type = "prob")[, "1"],
     xgboost = stats::predict(
       fit,
@@ -32,8 +32,9 @@ fit_credit_model <- function(model_name, train, predictors, seed = 2026L) {
     ),
     tree = rpart::rpart(
       formula,
-      data = model_data,
-      method = "anova",
+      data = model_data |>
+        dplyr::mutate(status_bad = factor(status_bad, levels = c(0, 1))),
+      method = "class",
       control = rpart::rpart.control(
         cp = 0.004,
         minsplit = 60,
@@ -113,64 +114,4 @@ auc_roc <- function(actual, predicted) {
 # Permutation importance expects a loss: larger values must be worse.
 one_minus_auc <- function(actual, predicted) {
   1 - auc_roc(actual, predicted)
-}
-
-local_shap_trace_optimized <- function(model, x, background, seed = 1L) {
-  set.seed(seed)
-
-  variables <- names(x)
-  n_variables <- length(variables)
-  n_background <- nrow(background)
-  permutations <- replicate(
-    n_background,
-    sample(variables),
-    simplify = FALSE
-  )
-
-  background_matrix <- as.matrix(background[, variables, drop = FALSE])
-  profile <- as.numeric(unlist(x[1, variables, drop = FALSE], use.names = FALSE))
-  states <- matrix(
-    NA_real_,
-    nrow = n_background * (n_variables + 1L),
-    ncol = n_variables,
-    dimnames = list(NULL, variables)
-  )
-
-  for (background_id in seq_len(n_background)) {
-    rows <- (background_id - 1L) * (n_variables + 1L) +
-      seq_len(n_variables + 1L)
-    path <- background_matrix[
-      rep(background_id, n_variables + 1L),
-      ,
-      drop = FALSE
-    ]
-    positions <- match(permutations[[background_id]], variables)
-
-    for (step in seq_len(n_variables)) {
-      path[(step + 1L):(n_variables + 1L), positions[[step]]] <-
-        profile[[positions[[step]]]]
-    }
-
-    states[rows, ] <- path
-  }
-
-  background_id <- rep(seq_len(n_background), each = n_variables + 1L)
-  step <- rep(0:n_variables, times = n_background)
-  variable <- factor(
-    unlist(lapply(permutations, function(permutation) c(NA_character_, permutation))),
-    levels = variables
-  )
-  probability <- predict_model(model, as.data.frame(states))
-  previous_probability <- numeric(length(probability))
-  first_step <- step == 0L
-  previous_probability[!first_step] <- probability[which(!first_step) - 1L]
-  diff <- probability - previous_probability
-
-  data.frame(
-    background_id = background_id[!first_step],
-    step = step[!first_step],
-    variable = variable[!first_step],
-    probability = probability[!first_step],
-    diff = diff[!first_step]
-  )
 }

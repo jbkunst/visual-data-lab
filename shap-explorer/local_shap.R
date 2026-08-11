@@ -1,11 +1,13 @@
-# Walk one random feature permutation from every background client to x.
+# Versión educativa y lenta. Construye paso a paso un camino aleatorio desde
+# cada cliente del background hasta el perfil x. Se conserva como referencia
+# porque refleja directamente la definición del cálculo.
 local_shap_trace <- function(model, x, background, seed = 1L) {
   set.seed(seed)
 
   variables <- names(x)
   n_background <- nrow(background)
 
-  # Build one complete random path from every background client to x.
+  # Construye un camino completo desde cada cliente de referencia hasta x.
   trace <- purrr::map_dfr(seq_len(n_background), function(background_id) {
     
     permutation <- sample(variables)
@@ -17,12 +19,12 @@ local_shap_trace <- function(model, x, background, seed = 1L) {
     profile_state <- x |>
       dplyr::select(dplyr::all_of(permutation))
 
-    # Keep z, then replace one variable at a time until reaching x.
+    # Parte desde z y reemplaza una variable a la vez hasta llegar a x.
     current <- initial_state
     states <- current
 
     for (position in seq_along(permutation)) {
-      # Take variables already introduced from x and the remaining variables from z.
+      # Toma desde x las variables ya introducidas y desde z las restantes.
       current <- dplyr::bind_cols(
         profile_state |>
           dplyr::select(1:position),
@@ -44,7 +46,7 @@ local_shap_trace <- function(model, x, background, seed = 1L) {
     )
   })
 
-  # Score z and every accumulated state, then compare consecutive probabilities.
+  # Predice cada estado y compara probabilidades consecutivas del camino.
   probabilities <- predict_model(
     model,
     trace |>
@@ -69,7 +71,8 @@ local_shap_trace <- function(model, x, background, seed = 1L) {
   trace
 }
 
-# Vectorized base R implementation used to compare speed with the educational trace.
+# Versión optimizada. Construye los mismos caminos en matrices y predice todos
+# los estados juntos. La usan tanto la app como el pipeline offline.
 local_shap_trace_optimized <- function(model, x, background, seed = 1L) {
   set.seed(seed)
 
@@ -130,7 +133,7 @@ local_shap_trace_optimized <- function(model, x, background, seed = 1L) {
   )
 }
 
-# Average path contributions to obtain one SHAP value per variable.
+# Promedia las contribuciones de los caminos: un valor SHAP por variable.
 summarize_shap <- function(trace) {
   trace |>
     dplyr::group_by(variable) |>

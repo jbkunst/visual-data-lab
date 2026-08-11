@@ -51,9 +51,27 @@ if (!identical(credit_models$test, effects_artifact$test)) stop("Effects use a d
 if (!identical(credit_models$predictors, shap_artifact$predictors)) stop("SHAP uses different predictors.")
 if (!identical(credit_models$predictors, effects_artifact$predictors)) stop("Effects use different predictors.")
 if (!identical(credit_models$predictors, importance_artifact$predictors)) stop("Importance uses different predictors.")
-if (!identical(credit_models$models, shap_artifact$models)) stop("SHAP contains different models.")
-if (!identical(credit_models$predictions, shap_artifact$predictions)) stop("SHAP contains different predictions.")
-if (!identical(credit_models$predictions, evaluation_artifact$predictions)) stop("Evaluation contains different predictions.")
+model_types <- vapply(credit_models$models, `[[`, character(1), "type")
+shap_model_types <- vapply(shap_artifact$models, `[[`, character(1), "type")
+model_labels <- vapply(credit_models$models, `[[`, character(1), "label")
+shap_model_labels <- vapply(shap_artifact$models, `[[`, character(1), "label")
+
+if (!identical(model_types, shap_model_types) ||
+    !identical(model_labels, shap_model_labels)) {
+  stop("SHAP describes different model specifications.")
+}
+if (!isTRUE(all.equal(
+  credit_models$predictions,
+  shap_artifact$predictions,
+  tolerance = 1e-12,
+  check.attributes = FALSE
+))) stop("SHAP contains different predictions.")
+if (!isTRUE(all.equal(
+  credit_models$predictions,
+  evaluation_artifact$predictions,
+  tolerance = 1e-12,
+  check.attributes = FALSE
+))) stop("Evaluation contains different predictions.")
 
 # 3. Consolidar ------------------------------------------------------------
 cli::cli_h1("Consolidación")
@@ -76,8 +94,7 @@ combined_artifact <- list(
   importance_values = importance_artifact$importance_values,
   evaluation = list(
     threshold_curve = evaluation_artifact$threshold_curve,
-    gains_curve = evaluation_artifact$gains_curve |>
-      dplyr::select(-score),
+    gains_curve = evaluation_artifact$gains_curve,
     summary = evaluation_artifact$evaluation_summary
   ),
   metadata = c(
@@ -92,7 +109,7 @@ combined_artifact <- list(
         prepared_at = Sys.time(),
         sources = as.list(artifact_paths),
         predictions_target = "status_bad in test; join by row_id",
-        gains_score = "join predictions by model and row_id"
+        gains_score = "stored because tied scores are grouped"
       )
     )
   )

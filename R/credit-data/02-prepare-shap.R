@@ -10,6 +10,7 @@ missing_packages <- required_packages[
 if (length(missing_packages)) stop("Install missing packages: ", paste(missing_packages, collapse = ", "))
 
 source("R/credit-data/00-helpers.R", local = TRUE)
+source("shap-explorer/local_shap.R", local = TRUE)
 
 shap_seed <- 2026L
 
@@ -29,34 +30,19 @@ test_predictors <- credit_models$test |>
 cli::cli_h1("SHAP")
 
 # Cada fila de test se explica usando la muestra completa de test como fondo.
-# Para cada fila de fondo se recorre una permutación de variables; luego se
-# promedian sus aportes marginales para obtener un SHAP por variable.
-shap_steps <- length(credit_models$models) * nrow(test_predictors)
-shap_progress <- cli::cli_progress_bar(
-  name = "SHAP",
-  total = shap_steps,
-  current = 0,
-  auto_terminate = TRUE,
-  clear = FALSE,
-  format = paste(
-    "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
-    "| {cli::pb_status} | {cli::pb_current}/{cli::pb_total}",
-    "| ETA: {cli::pb_eta}"
-  )
-)
-
+# Esta es una aproximación SHAP marginal Monte Carlo: para cada fila de fondo se
+# recorre una permutación. Las mismas permutaciones se reutilizan en todos los
+# perfiles para que sus diferencias no dependan de distinto ruido aleatorio.
 shap_values <- purrr::imap_dfr(
   credit_models$models,
   function(model_object, model_name) {
+    cli::cli_inform("SHAP: {.val {model_object$label}}")
+
     # El booster se reconstruye una vez por modelo; hacerlo dentro de cada fila
     # repetiría innecesariamente una operación de deserialización costosa.
     if (identical(model_object$type, "xgboost") && is.raw(model_object$fit)) model_object$fit <- xgboost::xgb.load.raw(model_object$fit)
 
     purrr::map_dfr(seq_len(nrow(test_predictors)), function(row_id) {
-      progress_status <- paste0(
-        model_object$label, " | row ", row_id, "/", nrow(test_predictors)
-      )
-
       shap <- local_shap_trace_optimized(
         model_object,
         x = test_predictors[row_id, , drop = FALSE],
@@ -75,10 +61,6 @@ shap_values <- purrr::imap_dfr(
         shap = shap$shap
       )
 
-      cli::cli_progress_update(
-        id = shap_progress,
-        status = progress_status
-      )
       result
     })
   }
@@ -129,8 +111,11 @@ shap_artifact <- list(
     credit_models$metadata,
     list(
       shap = list(
+        estimator = "marginal Monte Carlo SHAP",
         background = "complete test set",
         explained_sample = "complete test set",
+        paths_per_explanation = nrow(test_predictors),
+        common_random_permutations = TRUE,
         seed = shap_seed
       )
     )

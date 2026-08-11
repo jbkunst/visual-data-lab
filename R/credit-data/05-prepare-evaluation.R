@@ -59,20 +59,27 @@ threshold_curve <- predictions |>
 # 3. Ganancia y lift ------------------------------------------------------
 cli::cli_h1("Ganancia y lift")
 
-# La misma tabla ordenada alimenta ganancia acumulada, vistas tipo Lorenz y lift.
+# Los scores empatados se agrupan: todos los casos con el mismo score entran en
+# la curva juntos, tal como ocurriría al aplicar un umbral real.
 gains_curve <- predictions |>
   dplyr::group_by(model) |>
   dplyr::group_modify(function(data, key) {
     ordered <- data |>
+      dplyr::summarise(
+        observations = dplyr::n(),
+        positives = sum(status_bad),
+        .by = score
+      ) |>
       dplyr::arrange(dplyr::desc(score)) |>
       dplyr::mutate(
-        population_fraction = dplyr::row_number() / dplyr::n(),
-        positive_fraction = cumsum(status_bad) / sum(status_bad),
+        population_fraction = cumsum(observations) / sum(observations),
+        positive_fraction = cumsum(positives) / sum(positives),
         lift = positive_fraction / population_fraction
       ) |>
       dplyr::select(
-        row_id,
         score,
+        observations,
+        positives,
         population_fraction,
         positive_fraction,
         lift
@@ -80,8 +87,9 @@ gains_curve <- predictions |>
 
     dplyr::bind_rows(
       tibble::tibble(
-        row_id = NA_integer_,
         score = Inf,
+        observations = 0L,
+        positives = 0L,
         population_fraction = 0,
         positive_fraction = 0,
         lift = NA_real_
@@ -134,7 +142,8 @@ evaluation_artifact <- list(
       evaluation = list(
         sample = "test",
         positive_class = 1L,
-        score_direction = "higher score means higher probability of bad"
+        score_direction = "higher score means higher probability of bad",
+        gains_ties = "grouped by score"
       )
     )
   )

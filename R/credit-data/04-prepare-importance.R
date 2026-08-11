@@ -31,6 +31,30 @@ cli::cli_h1("Preparación")
 credit_models <- readRDS("R/credit-data/credit-models.rds")
 shap_artifact <- readRDS("shap-explorer/shap-credit.rds")
 
+if (!identical(credit_models$test, shap_artifact$test)) {
+  stop("SHAP uses a different test sample. Run 02-prepare-shap.R again.")
+}
+if (!identical(credit_models$predictors, shap_artifact$predictors)) {
+  stop("SHAP uses different predictors. Run 02-prepare-shap.R again.")
+}
+model_types <- vapply(credit_models$models, `[[`, character(1), "type")
+shap_model_types <- vapply(shap_artifact$models, `[[`, character(1), "type")
+model_labels <- vapply(credit_models$models, `[[`, character(1), "label")
+shap_model_labels <- vapply(shap_artifact$models, `[[`, character(1), "label")
+
+if (!identical(model_types, shap_model_types) ||
+    !identical(model_labels, shap_model_labels)) {
+  stop("SHAP describes different model specifications. Run 02-prepare-shap.R again.")
+}
+if (!isTRUE(all.equal(
+  credit_models$predictions,
+  shap_artifact$predictions,
+  tolerance = 1e-12,
+  check.attributes = FALSE
+))) {
+  stop("SHAP contains different predictions. Run 02-prepare-shap.R again.")
+}
+
 models <- credit_models$models
 train <- credit_models$train
 test <- credit_models$test
@@ -102,32 +126,23 @@ permutation_importance <- purrr::imap_dfr(
 # 3. Drop-column importance ----------------------------------------------
 cli::cli_h1("Drop-column importance")
 
-full_losses <- purrr::imap_dfr(models, function(model, model_name) {
+full_losses <- purrr::imap_dfr(models, function(model_object, model_name) {
+  loss_before <- log_loss(
+    test$status_bad,
+    predict_model(model_object, test_predictors)
+  )
+
   tibble::tibble(
     model = model_name,
-    loss_before = log_loss(
-      test$status_bad,
-      predict_model(model, test_predictors)
-    )
+    loss_before = loss_before
   )
 })
 
-drop_progress <- cli::cli_progress_bar(
-  name = "Drop-column",
-  total = length(models) * length(predictors),
-  current = 0,
-  auto_terminate = TRUE,
-  clear = FALSE,
-  format = paste(
-    "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
-    "| {cli::pb_status} | {cli::pb_current}/{cli::pb_total}",
-    "| ETA: {cli::pb_eta}"
-  )
-)
-
 drop_column_importance <- purrr::imap_dfr(
   models,
-  function(model, model_name) {
+  function(model_object, model_name) {
+    cli::cli_inform("Drop-column: {.val {model_object$label}}")
+
     purrr::map_dfr(predictors, function(variable) {
       reduced_predictors <- setdiff(predictors, variable)
       reduced_model <- fit_credit_model(
@@ -157,8 +172,6 @@ drop_column_importance <- purrr::imap_dfr(
         loss_after
       )
 
-      progress_status <- paste(model$label, variable, sep = " | ")
-      cli::cli_progress_update(id = drop_progress, status = progress_status)
       result
     })
   }
@@ -167,22 +180,11 @@ drop_column_importance <- purrr::imap_dfr(
 # 4. SAGE ----------------------------------------------------------------
 cli::cli_h1("SAGE")
 
-sage_progress <- cli::cli_progress_bar(
-  name = "SAGE",
-  total = length(models) * sage_iterations,
-  current = 0,
-  auto_terminate = TRUE,
-  clear = FALSE,
-  format = paste(
-    "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
-    "| {cli::pb_status} | {cli::pb_current}/{cli::pb_total}",
-    "| ETA: {cli::pb_eta}"
-  )
-)
-
 sage_importance <- purrr::imap_dfr(
   models,
   function(model_object, model_name) {
+    cli::cli_inform("SAGE: {.val {model_object$label}}")
+
     if (identical(model_object$type, "xgboost") && is.raw(model_object$fit)) model_object$fit <- xgboost::xgb.load.raw(model_object$fit)
 
     purrr::map_dfr(seq_len(sage_iterations), function(iteration) {
@@ -221,11 +223,6 @@ sage_importance <- purrr::imap_dfr(
       }
 
       result <- dplyr::bind_rows(iteration_values)
-      progress_status <- sprintf(
-        "%s | iteration %d/%d",
-        model_object$label, iteration, sage_iterations
-      )
-      cli::cli_progress_update(id = sage_progress, status = progress_status)
       result
     })
   }

@@ -61,8 +61,6 @@ variable_grids <- predictors |>
 
 # El total usa las grillas reales después de unique(), no grid_size * variables;
 # por eso los cuantiles repetidos no dejan la barra incompleta.
-ice_steps <- sum(lengths(variable_grids))
-
 # ICE pregunta: "para este mismo cliente, ¿cómo cambiaría la predicción si solo
 # cambiáramos una variable?" Se conserva una fila por cliente, modelo, variable
 # y punto de la grilla. imap_dfr() entrega también el nombre de cada modelo y
@@ -73,22 +71,11 @@ ice_steps <- sum(lengths(variable_grids))
 # model <- credit_models$models[[model_name]]
 # variable <- "price"
 # grid_id <- 10L
-ice_progress <- cli::cli_progress_bar(
-  name = "ICE",
-  total = ice_steps * length(credit_models$models),
-  current = 0,
-  auto_terminate = TRUE,
-  clear = FALSE,
-  format = paste(
-    "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
-    "| {cli::pb_status} | {cli::pb_current}/{cli::pb_total}",
-    "| ETA: {cli::pb_eta}"
-  )
-)
-
 ice_values <- purrr::imap_dfr(
   credit_models$models,
   function(model_object, model_name) {
+    cli::cli_inform("ICE: {.val {model_object$label}}")
+
     # XGBoost se guarda como bytes para reducir el RDS. Lo reconstruimos una vez
     # por modelo, en vez de hacerlo nuevamente en cada punto de la grilla.
     if (identical(model_object$type, "xgboost") && is.raw(model_object$fit)) model_object$fit <- xgboost::xgb.load.raw(model_object$fit)
@@ -99,11 +86,6 @@ ice_values <- purrr::imap_dfr(
 
       # Repite el cálculo para cada valor representativo del predictor.
       purrr::map_dfr(seq_along(grid), function(grid_id) {
-        progress_status <- paste0(
-          model_object$label, " | ", variable,
-          " | grid ", grid_id, "/", length(grid)
-        )
-
         # Copiamos los datos para no modificar el test original. Se reemplaza
         # la variable analizada por el mismo valor en todos los clientes; las
         # demás variables mantienen los valores reales de cada cliente.
@@ -126,10 +108,6 @@ ice_values <- purrr::imap_dfr(
           estimate = predict_model(model_object, modified_data)
         )
 
-        cli::cli_progress_update(
-          id = ice_progress,
-          status = progress_status
-        )
         result
       })
     })
@@ -153,25 +131,10 @@ ale_breaks <- predictors |>
   })
 
 # Cada vector de n límites genera n - 1 intervalos efectivos.
-ale_steps <- sum(pmax(lengths(ale_breaks) - 1L, 0L))
-
 # ALE pregunta: "entre dos valores cercanos observados, ¿cuánto cambia en
 # promedio la predicción?" A diferencia de ICE/PDP, solo usa clientes que están
 # realmente dentro de cada intervalo. Esto reduce extrapolaciones poco realistas
 # cuando los predictores están correlacionados.
-ale_progress <- cli::cli_progress_bar(
-  name = "ALE",
-  total = ale_steps * length(credit_models$models),
-  current = 0,
-  auto_terminate = TRUE,
-  clear = FALSE,
-  format = paste(
-    "{cli::pb_name} {cli::pb_bar} {cli::pb_percent}",
-    "| {cli::pb_status} | {cli::pb_current}/{cli::pb_total}",
-    "| ETA: {cli::pb_eta}"
-  )
-)
-
 # Valores de ejemplo para seguir una iteración del bloque interior:
 # model_name <- "logistic"
 # model_object <- credit_models$models[[model_name]]
@@ -180,6 +143,8 @@ ale_progress <- cli::cli_progress_bar(
 ale_values <- purrr::imap_dfr(
   credit_models$models,
   function(model_object, model_name) {
+    cli::cli_inform("ALE: {.val {model_object$label}}")
+
     if (identical(model_object$type, "xgboost") && is.raw(model_object$fit)) model_object$fit <- xgboost::xgb.load.raw(model_object$fit)
 
     purrr::map_dfr(predictors, function(variable) {
@@ -203,17 +168,11 @@ ale_values <- purrr::imap_dfr(
       local_effects <- purrr::map_dfr(
         seq_len(length(breaks) - 1L),
         function(bin_index) {
-          progress_status <- sprintf(
-            "%s | %s | bin %d/%d",
-            model_object$label, variable, bin_index, length(breaks) - 1L
-          )
-
           # Solo se usan las observaciones cuyo valor real cae en este intervalo.
           rows <- which(interval == bin_index)
 
           # Un intervalo vacío no aporta información.
           if (!length(rows)) {
-            cli::cli_progress_update(id = ale_progress, status = progress_status)
             return(tibble::tibble())
           }
 
@@ -240,7 +199,6 @@ ale_values <- purrr::imap_dfr(
             )
           )
 
-          cli::cli_progress_update(id = ale_progress, status = progress_status)
           result
         }
       ) |>

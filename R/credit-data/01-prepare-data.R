@@ -34,9 +34,11 @@ predictors <- c(
 # Se usan casos completos para que ningún modelo aplique una imputación distinta.
 # status_bad convierte la clase de interés en 1 y split_stratum existe solamente
 # para mantener su proporción al dividir train y test.
-credit_data <- modeldata::credit_data |>
+credit_data_raw <- modeldata::credit_data |>
   tibble::as_tibble() |>
-  dplyr::rename_with(tolower) |>
+  dplyr::rename_with(tolower)
+
+credit_data <- credit_data_raw |>
   tidyr::drop_na(status, dplyr::all_of(predictors)) |>
   dplyr::mutate(
     status_bad = as.integer(status == "bad"),
@@ -204,6 +206,9 @@ credit_models <- list(
     split_seed = split_seed,
     model_seed = model_seed,
     model_labels = vapply(models, `[[`, character(1), "label"),
+    observations_raw = nrow(credit_data_raw),
+    observations_complete = nrow(credit_data),
+    observations_removed = nrow(credit_data_raw) - nrow(credit_data),
     prepared_at = Sys.time()
   )
 )
