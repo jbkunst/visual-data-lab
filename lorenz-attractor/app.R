@@ -52,7 +52,7 @@ ui <- page_fillable(
       withMathJax(),
       sliderInput(
         "sigma",
-        "\\( \\sigma \\) (sigma):",
+        input_label_vdl("\\( \\sigma \\) (sigma)", "Controls how quickly the two horizontal state variables respond to each other."),
         min = 1,
         max = 20,
         value = 10,
@@ -60,7 +60,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "rho",
-        "\\( \\rho \\) (rho):",
+        input_label_vdl("\\( \\rho \\) (rho)", "Controls the system's forcing and helps determine whether chaotic behavior appears."),
         min = 1,
         max = 50,
         value = 28,
@@ -68,7 +68,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "beta",
-        "\\( \\beta \\) (beta):",
+        input_label_vdl("\\( \\beta \\) (beta)", "Controls dissipation in the vertical state variable."),
         min = 0.1,
         max = 10,
         value = 8/3,
@@ -84,7 +84,7 @@ ui <- page_fillable(
       ),
       shinyWidgets::sliderTextInput(
         "dt",
-        "Time step (dt):",
+        input_label_vdl("Time step \\(dt\\)", "Smaller steps approximate the continuous system more accurately but cover less time per point."),
         choices = c("0.001", "0.002", "0.005", "0.01", "0.02", "0.05"),
         selected = "0.01",
         grid = TRUE,

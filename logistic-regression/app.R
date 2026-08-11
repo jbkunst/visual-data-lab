@@ -49,7 +49,7 @@ ui <- page_fillable(
         ),
       sliderInput(
         "percent_noise",
-        tags$small("Percent noise"),
+        input_label_vdl("Percent noise", "Randomly flips this share of class labels, making the relationship harder to learn."),
         min = 0,
         max = 50,
         step = 5,
@@ -58,7 +58,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "order",
-        tags$span("Model Order"),
+        input_label_vdl("Model order", "Adds polynomial terms up to this degree, allowing increasingly flexible decision boundaries."),
         min = 1,
         max = 4,
         step = 1,
@@ -74,7 +74,7 @@ ui <- page_fillable(
       ),
       checkboxInput(
         "apply_stepwise", 
-        tags$small("Apply stepwise"),
+        input_label_vdl("Apply stepwise", "Selects a smaller model by comparing candidate terms with an information criterion."),
         value = FALSE
       ),
       checkboxInput(

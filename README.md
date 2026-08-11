@@ -105,7 +105,7 @@ the app manifest. Do not install packages from inside `app.R`:
 remotes::install_github(
   "jbkunst/visual-data-lab",
   subdir = "vdltheme",
-  ref = "vdltheme-v0.0.2",
+  ref = "vdltheme-v0.0.3",
   upgrade = "never"
 )
 
@@ -134,21 +134,13 @@ Customize the shared tooltip appearance only when an app needs it:
 apptheme <- theme_vdl(tooltip_bg = "#495057")
 ```
 
-Use this pattern, adapting the outer wrapper to the existing label:
+Use the shared label helper:
 
 ```r
-label = tags$small(tagList(
+label = input_label_vdl(
   "Parameter name",
-  bslib::tooltip(
-    bsicons::bs_icon(
-      "info-circle",
-      class = "ms-1"
-    ),
-    "Short explanation.",
-    placement = "right",
-    options = list(trigger = "hover focus click")
-  )
-))
+  "Short explanation."
+)
 ```
 
 Before implementing tooltips across an app, list the selected inputs and why each one needs help. It is valid for an app to need no tooltips.

@@ -40,12 +40,9 @@ ui <- page_fillable(
       ),
       shinyWidgets::sliderTextInput(
         "bandwidth",
-        tags$small(
+        input_label_vdl(
           "Bandwidth",
-          tooltip(
-            bsicons::bs_icon("info-circle", size = "0.75em", class = "ms-1", style = "color:#adb5bd;", a11y = "none", tabindex = "0"),
-            "Controls how many nearby observations are averaged. Smaller values follow local detail; larger values produce a smoother model.", placement = "right"
-          )
+          "Controls how many nearby observations are averaged. Smaller values follow local detail; larger values produce a smoother model."
         ),
         choices = c("0.1", "0.5", "1", "2", "3", "4", "5", "10", "20"),
         selected = "2",

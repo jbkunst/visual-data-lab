@@ -128,9 +128,9 @@ ui <- page_fillable(
       title = "K-means on images",
       withMathJax(),
       selectizeInput("image_file", tags$span("Image"), sample(img_choices), width = "100%"),
-      sliderTextInput("k", tags$span("Parameter \\(k\\) for \\(K\\)-Means"), c(1:5, 10, 20, 50, 100, 500), selected = 5, grid = TRUE, force_edges = TRUE),
-      checkboxInput("use_xy", tags$small("Use pixel position for clustering \\((r_i, g_i, b_i, x_i, y_i)\\)")),
-      checkboxInput("scale", tags$small("Scale to \\([0, 1]\\) all columns before kmeans")),
+      sliderTextInput("k", input_label_vdl("Parameter \\(k\\) for \\(K\\)-Means", "Sets the number of color groups used to reconstruct the image."), c(1:5, 10, 20, 50, 100, 500), selected = 5, grid = TRUE, force_edges = TRUE),
+      checkboxInput("use_xy", input_label_vdl("Use pixel position for clustering \\((r_i, g_i, b_i, x_i, y_i)\\)", "Adds location so nearby pixels with similar colors are more likely to share a cluster.")),
+      checkboxInput("scale", input_label_vdl("Scale to \\([0, 1]\\) before K-means", "Places color and position variables on comparable ranges before distances are calculated.")),
       accordion(
         open = FALSE,
         accordion_panel(

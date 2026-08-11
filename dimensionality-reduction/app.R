@@ -791,7 +791,7 @@ ui <- page_fillable(
 
       sliderTextInput(
         "neighbors",
-        tags$small("Neighbors after click"),
+        input_label_vdl("Neighbors after click", "Sets how many nearby observations are highlighted around a selected point in every projection."),
         choices = neighbor_choices,
         selected = "5",
         grid = TRUE,
@@ -887,7 +887,7 @@ server <- function(input, output, session) {
     tagList(
       sliderTextInput(
         "dimensions",
-        tags$small("Original dimensions"),
+        input_label_vdl("Original dimensions", "Sets the number of variables before each method reduces the data to two dimensions."),
         choices = dimension_choices,
         selected = "3",
         grid = TRUE,
@@ -895,7 +895,7 @@ server <- function(input, output, session) {
       ),
       sliderTextInput(
         "noise",
-        tags$small("Noise"),
+        input_label_vdl("Noise", "Adds random variation that can obscure the simulated structure before projection."),
         choices = noise_choices,
         selected = "0.10",
         grid = TRUE,

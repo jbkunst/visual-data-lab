@@ -489,7 +489,7 @@ ui <- page_fillable(
       
       sliderInput(
         "k",
-        tags$small("Parameter \\(k\\) for \\(K\\)-Means"),
+        input_label_vdl("Parameter \\(k\\) for \\(K\\)-Means", "Sets the number of clusters the algorithm must find."),
         value = 4,
         min = 2,
         max = KMAX,
@@ -498,7 +498,7 @@ ui <- page_fillable(
       
       sliderInput(
         "iter",
-        tags$small("Iterations of algorithm"),
+        input_label_vdl("Iterations of algorithm", "Shows how repeated assignment and centroid updates move the algorithm toward convergence."),
         min = 1,
         max = 15,
         ticks = FALSE,

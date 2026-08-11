@@ -50,8 +50,8 @@ ui <- page_fillable(
     sidebar = sidebar(
       title = "ARMA model Simulation",
       withMathJax(),
-      sliderInput("ar", tags$span("AR coefficient ", HTML("\\(\\phi\\)")), -.9, .9, AR, .1, width = "100%"),
-      sliderInput("ma", tags$span("MA coefficient ", HTML("\\(\\theta\\)")), -.9, .9, MA, .1, width = "100%"),
+      sliderInput("ar", input_label_vdl(tags$span("AR coefficient ", HTML("\\(\\phi\\)")), "Controls how strongly the previous value persists in the series."), -.9, .9, AR, .1, width = "100%"),
+      sliderInput("ma", input_label_vdl(tags$span("MA coefficient ", HTML("\\(\\theta\\)")), "Controls how strongly the previous random shock affects the current value."), -.9, .9, MA, .1, width = "100%"),
       sliderInput("interval", "Refresh (secs.)", 0.5, 2, value = 0.5, step = 0.5, width = "100%"),
       accordion(
         open = FALSE,

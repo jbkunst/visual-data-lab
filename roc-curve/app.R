@@ -134,9 +134,9 @@ ui <- page_fillable(
         shinyWidgets::sliderTextInput("sd_1", tags$small("SD"), choices = sd_choices, selected = "1", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE)
       ),
 
-      sliderInput("threshold", tags$small("Threshold"), min = -5, max = 5, value = 0, step = 0.1, ticks = FALSE),
+      sliderInput("threshold", input_label_vdl("Threshold", "Scores at or above this value are classified as positive."), min = -5, max = 5, value = 0, step = 0.1, ticks = FALSE),
       shinyWidgets::sliderTextInput("n", tags$small("Number of observations"), choices = n_choices, selected = "1000", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE),
-      shinyWidgets::sliderTextInput("p_1", tags$small("Positive proportion"), choices = proportion_choices, selected = "50", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE, post = "%"),
+      shinyWidgets::sliderTextInput("p_1", input_label_vdl("Positive proportion", "Changes class prevalence and therefore precision, predictive values, and the confusion matrix."), choices = proportion_choices, selected = "50", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE, post = "%"),
       accordion(
         open = FALSE,
         accordion_panel(

@@ -50,7 +50,7 @@ ui <- page_fillable(
         ),
       sliderInput(
         "percent_noise",
-        tags$small("Percent noise"),
+        input_label_vdl("Percent noise", "Randomly flips this share of class labels, making the relationship harder to learn."),
         min = 0,
         max = 50,
         step = 5,
@@ -59,7 +59,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "depth",
-        tags$small("Maximum depth of the tree"),
+        input_label_vdl("Maximum depth of the tree", "Limits the number of successive splits; deeper trees can learn more complex boundaries."),
         min = 1,
         max = 8,
         step = 1,
@@ -67,7 +67,7 @@ ui <- page_fillable(
       ),
       sliderInput(
         "alpha",
-        tags$small("Significance level for variable selection \\( \\alpha \\)"),
+        input_label_vdl("Significance level for variable selection \\( \\alpha \\)", "Higher values make the tree more willing to accept a candidate split."),
         min = 0,
         max = 1,
         step = 0.05,

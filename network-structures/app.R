@@ -510,7 +510,7 @@ server <- function(input, output, session) {
       return(
         sliderInput(
           "mean_degree",
-          tags$small("Expected average degree"),
+          input_label_vdl("Expected average degree", "Sets the expected number of links per node in the random graph."),
           min = 1,
           max = 50,
           value = 6,
@@ -524,7 +524,7 @@ server <- function(input, output, session) {
         tagList(
           sliderInput(
             "neighbours",
-            tags$small("Neighbours on each side"),
+            input_label_vdl("Neighbours on each side", "Connects each node to this many nearby nodes on both sides of the initial ring."),
             min = 1,
             max = 15,
             value = 2,
@@ -532,7 +532,7 @@ server <- function(input, output, session) {
           ),
           sliderInput(
             "rewiring",
-            tags$small("Rewiring probability"),
+            input_label_vdl("Rewiring probability", "Sets the chance that each local edge is rewired to create a long-range shortcut."),
             min = 0,
             max = 1,
             value = 0.1,
@@ -546,7 +546,7 @@ server <- function(input, output, session) {
       return(
         sliderInput(
           "attachments",
-          tags$small("Links created by each new node"),
+          input_label_vdl("Links created by each new node", "Controls network density as new nodes preferentially attach to already connected nodes."),
           min = 1,
           max = 10,
           value = 2,
@@ -568,7 +568,7 @@ server <- function(input, output, session) {
           ),
           sliderInput(
             "mean_degree",
-            tags$small("Target average degree"),
+            input_label_vdl("Target average degree", "Sets the intended average number of links per node across all communities."),
             min = 2,
             max = 40,
             value = 10,
@@ -576,7 +576,7 @@ server <- function(input, output, session) {
           ),
           sliderInput(
             "community_strength",
-            tags$small("Share of links kept inside communities"),
+            input_label_vdl("Share of links kept inside communities", "Higher values make planted groups more internally connected and easier to recover."),
             min = 0.5,
             max = 0.98,
             value = 0.85,

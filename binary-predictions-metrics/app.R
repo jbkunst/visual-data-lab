@@ -46,7 +46,7 @@ ui <- page_fillable(
       title = "Binary predictions",
       withMathJax(),
       selectInput("variable", tags$small("Variable"), choices = names(credit_data)[-1]),
-      checkboxInput("logscale", tags$small("Log-scale on \\(x\\)-axis")),
+      checkboxInput("logscale", input_label_vdl("Log-scale on \\(x\\)-axis", "Uses logarithmic spacing to make highly skewed values easier to compare.")),
       accordion(
         open = FALSE,
         accordion_panel(

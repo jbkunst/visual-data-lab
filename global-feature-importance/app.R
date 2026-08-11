@@ -105,11 +105,11 @@ ui <- page_fillable(
         selected = "logistic"
       ),
       selectInput(
-        "permutation_metric", tags$small("Permutation metric"),
+        "permutation_metric", input_label_vdl("Permutation metric", "Measures the performance loss after one feature is shuffled while the others remain unchanged."),
         choices = c("Log-loss" = "log_loss", "1 − AUC ROC" = "1_minus_auc_roc")
       ),
       selectInput(
-        "sage_metric", tags$small("SAGE metric"),
+        "sage_metric", input_label_vdl("SAGE metric", "Defines the loss used to value feature subsets across many possible inclusion orders."),
         choices = c("Log-loss" = "log_loss", "1 − AUC ROC" = "1_minus_auc_roc")
       ),
       accordion(
