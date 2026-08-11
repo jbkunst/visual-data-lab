@@ -40,7 +40,7 @@ jobs:
       - name: Build Wasm image
         uses: ./.actions/build-rwasm
         with:
-          packages: "./vdltheme"
+          packages: "github::jbkunst/visual-data-lab/vdltheme@vdltheme-v0.0.1"
           strip: "demo, doc, examples, help, html, include, tests, vignette"
           image-path: ._rwasm
           webr-image: ghcr.io/r-wasm/webr:main
