@@ -29,6 +29,9 @@ jobs:
         with:
           r-version: release
 
+      - name: Build vdltheme source package
+        run: R CMD build vdltheme
+
       - name: Checkout r-wasm actions
         uses: actions/checkout@v6
         with:
@@ -40,7 +43,7 @@ jobs:
       - name: Build Wasm image
         uses: ./.actions/build-rwasm
         with:
-          packages: "github::jbkunst/visual-data-lab/vdltheme@vdltheme-v0.0.1"
+          packages: "./vdltheme_0.0.1.tar.gz"
           strip: "demo, doc, examples, help, html, include, tests, vignette"
           image-path: ._rwasm
           webr-image: ghcr.io/r-wasm/webr:main
