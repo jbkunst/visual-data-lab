@@ -428,7 +428,18 @@ server <- function(input, output, session) {
       hc_add_series(
         id = "pd_line", name = "Predicted PD", type = "line",
         data = data$line, color = "#d95f59", dashStyle = "ShortDash",
-        lineWidth = 2, marker = list(enabled = FALSE)
+        lineWidth = 2, marker = list(enabled = FALSE),
+        dataLabels = list(
+          enabled = TRUE, align = "left", x = 5, y = 4,
+          crop = FALSE, overflow = "allow",
+          style = list(color = "#d95f59", fontWeight = "normal", textOutline = "none"),
+          formatter = JS(paste(
+            "function () {",
+            "  if (this.point.index !== 1) return null;",
+            "  return 'Predicted PD: ' + Highcharts.numberFormat(100 * this.x, 1) + '%';",
+            "}"
+          ))
+        )
       )
   })
 
