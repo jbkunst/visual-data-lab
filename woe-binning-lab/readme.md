@@ -1,4 +1,4 @@
-This lab shows how a continuous predictor becomes a set of risk bins using
+This credit-risk lab shows how a continuous predictor becomes a set of risk bins using
 [`risk3r`](https://github.com/jbkunst/risk3r).
 
 1. The selected algorithm chooses the cut points.
