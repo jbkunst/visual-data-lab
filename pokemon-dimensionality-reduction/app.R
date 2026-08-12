@@ -5,8 +5,7 @@ library(dplyr)
 library(purrr)
 library(highcharter)
 library(Rtsne)
-
-umap_available <- requireNamespace("uwot", quietly = TRUE)
+library(uwot)
 
 # data --------------------------------------------------------------------
 app_dir <- if (file.exists("prepare_data.R")) "." else "pokemon-dimensionality-reduction"
@@ -33,9 +32,6 @@ recipe_labels <- c(
   types = "Pokémon types", ecology = "Breeding & ecology",
   custom = "Custom weights"
 )
-
-method_choices <- c("PCA" = "pca", "t-SNE" = "tsne")
-if (umap_available) method_choices <- c(method_choices, "UMAP" = "umap")
 
 # pokemon_feature_matrix() prepares the mixed data for every similarity recipe:
 # - continuous variables are standardized;
@@ -112,7 +108,6 @@ run_projection <- function(
 
   # UMAP and t-SNE both consume the same deliberately prepared Euclidean
   # feature space, which makes their projections comparable at the input level.
-  if (!umap_available) stop("UMAP is not available in this runtime.", call. = FALSE)
   coordinates <- uwot::umap(
     x,
     n_components = 2,
@@ -512,7 +507,7 @@ ui <- page_fillable(
           "Method",
           "Chooses the algorithm used to project the selected Pokémon into two dimensions."
         ),
-        choices = method_choices,
+        choices = c("PCA" = "pca", "t-SNE" = "tsne", "UMAP" = "umap"),
         selected = "tsne"
       ),
       selectInput(
