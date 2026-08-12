@@ -4,6 +4,7 @@ library(bslib)
 library(dplyr)
 library(purrr)
 library(highcharter)
+library(markdown)
 library(Rtsne)
 library(uwot)
 
