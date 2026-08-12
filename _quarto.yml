@@ -24,6 +24,9 @@ website:
 format:
   html:
     theme: cosmo
+    include-in-header:
+      text: |
+        <meta name="google-site-verification" content="pLmyRYfU13GaMc8sk2zMHqhTE6r4PvcAJ5C4bK5VW9E">
     toc: false
     anchor-sections: false
     smooth-scroll: true
