@@ -92,6 +92,7 @@ combined_artifact <- list(
     ale_values = effects_artifact$ale_values
   ),
   importance_values = importance_artifact$importance_values,
+  importance_diagnostics = importance_artifact$diagnostics,
   evaluation = list(
     threshold_curve = evaluation_artifact$threshold_curve,
     gains_curve = evaluation_artifact$gains_curve,

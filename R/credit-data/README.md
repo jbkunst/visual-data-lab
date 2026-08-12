@@ -105,15 +105,14 @@ parámetros usados para construir las grillas.
 
 ### `04-prepare-importance.R`
 
-**Objetivo:** calcular importancia por permutación, drop-column, una
-aproximación marginal SAGE e importancia global `mean(abs(SHAP))`. Antes de
-usar SHAP comprueba que corresponda a los modelos y al test actuales.
+**Objetivo:** descomponer la calidad del modelo mediante permutation y una
+aproximación marginal SAGE, y preparar curvas compactas para explicar AUC,
+Gini, log-loss, KS y cumulative gains en train y test.
 
 **Entradas:**
 
 ```text
 R/credit-data/credit-models.rds
-shap-explorer/shap-credit.rds
 ```
 
 **Salida:**
@@ -122,8 +121,12 @@ shap-explorer/shap-credit.rds
 global-feature-importance/credit-importance.rds
 ```
 
-Contiene todos los resultados en `importance_values`, identificados por modelo,
-método, métrica, variable e iteración.
+Contiene los resultados de permutation y SAGE en `importance_values`, además de
+curvas diagnósticas, resúmenes de calidad y pérdidas individuales.
+
+Permutation y SAGE se calculan para log-loss, `1 − AUC ROC` y
+`1 − KS`. La app presenta AUC, Gini y KS como métricas donde valores mayores
+indican mejor calidad; solo log-loss conserva la dirección de pérdida.
 
 Las magnitudes de métodos con métricas distintas no deben compararse como si
 estuvieran en la misma escala.
@@ -192,7 +195,8 @@ El objeto `credit-analysis.rds` tiene la siguiente estructura:
 | `explanations$shap_values` | Contribución local por modelo, caso y variable | SHAP Explorer |
 | `explanations$ice_values` | Predicciones ICE por modelo, caso, variable y grilla | Variable Effects |
 | `explanations$ale_values` | Efectos ALE locales y acumulados | Variable Effects |
-| `importance_values` | Permutation, drop-column, SAGE y global SHAP | Global Feature Importance |
+| `importance_values` | Permutation y SAGE por métrica | Model Quality Decomposition |
+| `importance_diagnostics` | ROC, KS, CAP/gains y pérdidas individuales | Model Quality Decomposition |
 | `evaluation$threshold_curve` | Tasas ROC y brecha KS por umbral | Model Evaluation |
 | `evaluation$gains_curve` | Ganancia y lift acumulados, con empates agrupados | Model Evaluation |
 | `evaluation$summary` | Log-loss, AUC, Gini, KS y umbral KS | Model Evaluation |
@@ -208,7 +212,7 @@ El objeto `credit-analysis.rds` tiene la siguiente estructura:
 | `models` | Sí, con XGBoost nativo | — | — | — | Sí, con XGBoost nativo |
 | `predictions` | Sí | — | — | Sí | Sí, sin repetir `status_bad` |
 | `baseline` | Sí | — | — | — | Sí |
-| SHAP local | Sí | — | Fuente de global SHAP | — | `explanations$shap_values` |
+| SHAP local | Sí | — | — | — | `explanations$shap_values` |
 | ICE | — | Sí | — | — | `explanations$ice_values` |
 | ALE | — | Sí | — | — | `explanations$ale_values` |
 | Importancias globales | — | — | Sí | — | `importance_values` |

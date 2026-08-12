@@ -29,31 +29,6 @@ sage_iterations <- 50L
 cli::cli_h1("Preparación")
 
 credit_models <- readRDS("R/credit-data/credit-models.rds")
-shap_artifact <- readRDS("shap-explorer/shap-credit.rds")
-
-if (!identical(credit_models$test, shap_artifact$test)) {
-  stop("SHAP uses a different test sample. Run 02-prepare-shap.R again.")
-}
-if (!identical(credit_models$predictors, shap_artifact$predictors)) {
-  stop("SHAP uses different predictors. Run 02-prepare-shap.R again.")
-}
-model_types <- vapply(credit_models$models, `[[`, character(1), "type")
-shap_model_types <- vapply(shap_artifact$models, `[[`, character(1), "type")
-model_labels <- vapply(credit_models$models, `[[`, character(1), "label")
-shap_model_labels <- vapply(shap_artifact$models, `[[`, character(1), "label")
-
-if (!identical(model_types, shap_model_types) ||
-    !identical(model_labels, shap_model_labels)) {
-  stop("SHAP describes different model specifications. Run 02-prepare-shap.R again.")
-}
-if (!isTRUE(all.equal(
-  credit_models$predictions,
-  shap_artifact$predictions,
-  tolerance = 1e-12,
-  check.attributes = FALSE
-))) {
-  stop("SHAP contains different predictions. Run 02-prepare-shap.R again.")
-}
 
 models <- credit_models$models
 train <- credit_models$train
@@ -69,7 +44,8 @@ cli::cli_h1("Permutation importance")
 # siempre significa que permutar la variable empeoró el modelo.
 permutation_losses <- list(
   log_loss = log_loss,
-  `1_minus_auc_roc` = one_minus_auc
+  `1_minus_auc_roc` = one_minus_auc,
+  `1_minus_ks` = one_minus_ks
 )
 
 permutation_importance <- purrr::imap_dfr(
@@ -123,66 +99,13 @@ permutation_importance <- purrr::imap_dfr(
   }
 )
 
-# 3. Drop-column importance ----------------------------------------------
-cli::cli_h1("Drop-column importance")
-
-full_losses <- purrr::imap_dfr(models, function(model_object, model_name) {
-  loss_before <- log_loss(
-    test$status_bad,
-    predict_model(model_object, test_predictors)
-  )
-
-  tibble::tibble(
-    model = model_name,
-    loss_before = loss_before
-  )
-})
-
-drop_column_importance <- purrr::imap_dfr(
-  models,
-  function(model_object, model_name) {
-    cli::cli_inform("Drop-column: {.val {model_object$label}}")
-
-    purrr::map_dfr(predictors, function(variable) {
-      reduced_predictors <- setdiff(predictors, variable)
-      reduced_model <- fit_credit_model(
-        model_name,
-        train = train,
-        predictors = reduced_predictors,
-        seed = importance_seed
-      )
-      loss_before <- full_losses$loss_before[full_losses$model == model_name]
-      loss_after <- log_loss(
-        test$status_bad,
-        predict_model(
-          reduced_model,
-          test[, reduced_predictors, drop = FALSE]
-        )
-      )
-
-      result <- tibble::tibble(
-        model = model_name,
-        sample = "test",
-        metric = "log_loss",
-        method = "drop_column",
-        variable = variable,
-        iteration = NA_integer_,
-        importance = loss_after - loss_before,
-        loss_before,
-        loss_after
-      )
-
-      result
-    })
-  }
-)
-
-# 4. SAGE ----------------------------------------------------------------
+# 3. SAGE ----------------------------------------------------------------
 cli::cli_h1("SAGE")
 
 sage_losses <- list(
   log_loss = log_loss,
-  `1_minus_auc_roc` = one_minus_auc
+  `1_minus_auc_roc` = one_minus_auc,
+  `1_minus_ks` = one_minus_ks
 )
 
 sage_importance <- purrr::imap_dfr(
@@ -236,40 +159,107 @@ sage_importance <- purrr::imap_dfr(
   }
 )
 
-# 5. Global SHAP ----------------------------------------------------------
-cli::cli_h1("Global SHAP")
+# 4. Curvas de calidad ----------------------------------------------------
+cli::cli_h1("Curvas de calidad")
 
-shap_global_importance <- shap_artifact$shap_values |>
+diagnostic_predictions <- purrr::imap_dfr(models, function(model_object, model_name) {
+  purrr::map_dfr(c("train", "test"), function(sample_name) {
+    sample_data <- if (sample_name == "train") train else test
+    scores <- predict_model(
+      model_object,
+      sample_data[, predictors, drop = FALSE]
+    )
+
+    tibble::tibble(
+      model = model_name, sample = sample_name,
+      status_bad = sample_data$status_bad, score = scores,
+      individual_log_loss = individual_log_loss(sample_data$status_bad, scores)
+    )
+  })
+})
+
+threshold_curves <- diagnostic_predictions |>
+  dplyr::group_by(model, sample) |>
+  dplyr::group_modify(function(data, key) {
+    n_positive <- sum(data$status_bad == 1L)
+    n_negative <- sum(data$status_bad == 0L)
+
+    curve <- data |>
+      dplyr::summarise(
+        positives = sum(status_bad == 1L),
+        negatives = sum(status_bad == 0L),
+        .by = score
+      ) |>
+      dplyr::arrange(dplyr::desc(score)) |>
+      dplyr::mutate(
+        true_positive_rate = cumsum(positives) / n_positive,
+        false_positive_rate = cumsum(negatives) / n_negative,
+        ks_gap = true_positive_rate - false_positive_rate
+      ) |>
+      dplyr::select(threshold = score, true_positive_rate, false_positive_rate, ks_gap)
+
+    dplyr::bind_rows(
+      tibble::tibble(
+        threshold = Inf, true_positive_rate = 0,
+        false_positive_rate = 0, ks_gap = 0
+      ),
+      curve
+    )
+  }) |>
+  dplyr::ungroup()
+
+gains_curves <- diagnostic_predictions |>
+  dplyr::group_by(model, sample) |>
+  dplyr::group_modify(function(data, key) {
+    curve <- data |>
+      dplyr::summarise(
+        observations = dplyr::n(), positives = sum(status_bad),
+        .by = score
+      ) |>
+      dplyr::arrange(dplyr::desc(score)) |>
+      dplyr::mutate(
+        population_fraction = cumsum(observations) / sum(observations),
+        positive_fraction = cumsum(positives) / sum(positives)
+      ) |>
+      dplyr::select(score, population_fraction, positive_fraction)
+
+    dplyr::bind_rows(
+      tibble::tibble(
+        score = Inf, population_fraction = 0, positive_fraction = 0
+      ),
+      curve
+    )
+  }) |>
+  dplyr::ungroup()
+
+quality_summary <- diagnostic_predictions |>
+  dplyr::group_by(model, sample) |>
   dplyr::summarise(
-    importance = mean(abs(shap)),
-    .by = c(model, variable)
-  ) |>
-  dplyr::mutate(
-    sample = "test",
-    metric = "prediction_change",
-    method = "shap_global",
-    iteration = NA_integer_,
-    loss_before = NA_real_,
-    loss_after = NA_real_
-  ) |>
-  dplyr::select(
-    model, sample, metric, method, variable, iteration,
-    importance, loss_before, loss_after
+    log_loss = log_loss(status_bad, score),
+    auc = auc_roc(status_bad, score),
+    ks = ks_statistic(status_bad, score),
+    default_rate = mean(status_bad),
+    .groups = "drop"
   )
 
 importance_values <- dplyr::bind_rows(
   permutation_importance,
-  drop_column_importance,
-  sage_importance,
-  shap_global_importance
+  sage_importance
 )
 
-# 6. Artefacto ------------------------------------------------------------
+# 5. Artefacto ------------------------------------------------------------
 cli::cli_h1("Artefacto")
 
 importance_artifact <- list(
   predictors = predictors,
   importance_values = importance_values,
+  diagnostics = list(
+    threshold_curves = threshold_curves,
+    gains_curves = gains_curves,
+    quality_summary = quality_summary,
+    log_loss_values = diagnostic_predictions |>
+      dplyr::select(model, sample, individual_log_loss)
+  ),
   metadata = c(
     credit_models$metadata,
     list(
@@ -281,8 +271,7 @@ importance_artifact <- list(
         sage_implementation = "marginal Monte Carlo path approximation",
         sage_metrics = names(sage_losses),
         sage_iterations = sage_iterations,
-        seed = importance_seed,
-        shap_global = "mean(abs(shap))"
+        seed = importance_seed
       )
     )
   )

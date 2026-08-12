@@ -93,9 +93,13 @@ save_credit_artifact <- function(object, path) {
   invisible(path)
 }
 
-log_loss <- function(actual, predicted, epsilon = 1e-15) {
+individual_log_loss <- function(actual, predicted, epsilon = 1e-15) {
   predicted <- pmin(pmax(as.numeric(predicted), epsilon), 1 - epsilon)
-  -mean(actual * log(predicted) + (1 - actual) * log(1 - predicted))
+  -(actual * log(predicted) + (1 - actual) * log(1 - predicted))
+}
+
+log_loss <- function(actual, predicted, epsilon = 1e-15) {
+  mean(individual_log_loss(actual, predicted, epsilon))
 }
 
 auc_roc <- function(actual, predicted) {
@@ -114,4 +118,29 @@ auc_roc <- function(actual, predicted) {
 # Permutation importance expects a loss: larger values must be worse.
 one_minus_auc <- function(actual, predicted) {
   1 - auc_roc(actual, predicted)
+}
+
+ks_statistic <- function(actual, predicted) {
+  actual <- as.integer(actual)
+  n_positive <- sum(actual == 1L)
+  n_negative <- sum(actual == 0L)
+
+  if (!n_positive || !n_negative) stop("KS requires both outcome classes.")
+
+  counts <- stats::aggregate(
+    cbind(positives = actual == 1L, negatives = actual == 0L),
+    by = list(score = predicted), sum
+  )
+  counts <- counts[order(counts$score, decreasing = TRUE), ]
+
+  max(c(
+    0,
+    cumsum(counts$positives) / n_positive -
+      cumsum(counts$negatives) / n_negative
+  ))
+}
+
+# Permutation and SAGE expect a loss: larger values must be worse.
+one_minus_ks <- function(actual, predicted) {
+  1 - ks_statistic(actual, predicted)
 }
