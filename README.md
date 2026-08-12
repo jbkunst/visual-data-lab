@@ -83,6 +83,54 @@ Replace `kmeans` with the app folder name. Screenshots are source assets and sho
 
 If a Shinylive app cannot be exported, the build fails. Move it to the server runtime only when there is a deliberate reason to host it on Posit Connect Cloud.
 
+### Test one Shinylive app locally
+
+Do not run `R/build_site.R` locally. To test a single app, remove only the
+ignored Shinylive output, export the app, and serve it in the background:
+
+```r
+app_folder <- "underfitting-overfitting"
+slug <- app_folder
+port <- 8000
+
+unlink("docs/live", recursive = TRUE, force = TRUE)
+
+shinylive::export(
+  appdir = app_folder,
+  destdir = "docs/live",
+  subdir = slug,
+  package_cache = FALSE
+)
+
+server <- httpuv::runStaticServer(
+  dir = "docs/live",
+  host = "127.0.0.1",
+  port = port,
+  background = TRUE,
+  browse = FALSE
+)
+
+later::later(
+  function() {
+    browseURL(sprintf("http://127.0.0.1:%s/%s/", port, slug))
+  },
+  delay = 1
+)
+```
+
+Use `dir`, not `path`, with `httpuv::runStaticServer()`. Passing `path` through
+`...` can produce `Not compatible with requested type: [type=character;
+target=logical]` in current `httpuv` versions. Stop the background server with:
+
+```r
+server$stop()
+```
+
+If the page is blank after a successful export, close previous preview tabs
+and retry on a new port. A stale Service Worker may remain associated with the
+old local origin. Browser console errors are more informative than repeating
+the export blindly.
+
 ## Shared Theme and Visual Style
 
 Apps use the shared `vdltheme` package and its bundled IBM Plex Sans font:
