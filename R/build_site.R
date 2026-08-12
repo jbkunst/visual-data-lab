@@ -224,7 +224,13 @@ cards <- apps$app |>
       title = meta$title,
       description = meta$description,
       image = image,
-      categories = meta$categories[[1]],
+      # Keep editorial categories in DESCRIPTION focused on subject matter.
+      # Server apps receive one generated tag so the gallery can filter the
+      # faster-to-demo Connect deployments without labeling every browser app.
+      categories = unique(c(
+        meta$categories[[1]],
+        if (meta$runtime == "server") "runtime-server"
+      )),
       path = as.character(launch_url)
     )
   })
