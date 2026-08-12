@@ -1,4 +1,3 @@
-Title: Global Feature Importance
-Description: Compare how four global importance methods rank the variables used by credit-risk models.
+Title: Model Quality Decomposition
+Description: Explore how variables build or reduce credit-model quality through permutation, SAGE, metric diagnostics, and cumulative gains.
 Categories: machine learning, explainability, credit risk
-Status: draft

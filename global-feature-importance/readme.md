@@ -1,31 +1,35 @@
-Each panel asks a different global question about the selected model.
+This app connects model quality with the variables that create it.
 
-- **Permutation** measures how much test loss increases after shuffling one variable.
-- **Drop-column** retrains the model without one variable and measures the increase in log-loss.
-- **SAGE** restores variables along random paths and attributes reductions in a selected loss function.
-- **Global SHAP** averages the absolute local SHAP contribution of each variable.
+- **Permutation loss** compares the selected model's test loss with its loss
+  after one variable is shuffled. A larger deterioration means that the model
+  relies more strongly on that variable.
+- **SAGE decomposition** starts with no aligned variables and attributes the
+  reduction in test loss across variables, ending at the full model.
+- **Metric diagnostic** explains the selected quality measure using train and
+  test data: individual penalties for log-loss, the ROC curve for AUC, the
+  CAP/Lorenz curve for Gini, and cumulative good/bad rates for KS.
+- **Cumulative gains** compares all models on the test sample and highlights the
+  selected model. It shows how many defaults are captured by targeting the
+  riskiest share of the portfolio.
 
-Positive values indicate useful variables. Small negative values can occur through
-sampling variation or when a variable slightly harms out-of-sample performance.
-Because the methods use different definitions and units, compare rankings rather
-than bar lengths across panels.
+AUC ROC, Gini, and KS are better when higher; log-loss is better when lower.
+Internally, importance uses `1 − AUC ROC` and `1 − KS` so every method receives
+a loss, but the app translates the results back to the selected quality metric.
+The Gini diagnostic uses the CAP/Lorenz view and compares the observed model
+with random and perfect selection.
 
-SAGE is defined relative to a loss function, so its importance values depend on
-what aspect of model quality that function measures. This app offers log-loss,
-which evaluates the predicted probabilities and their calibration, and
-`1 − AUC ROC`, which evaluates ranking only. Log-loss is the default. Without
-aligned variables, `1 − AUC` is expected to be near 0.5; useful variables reduce
-it toward the full model's value.
+Individual log-loss is small when the model assigns high probability to the
+observed outcome. A long right tail identifies confidently wrong predictions;
+these may be difficult cases, data errors, distribution shift, or overconfident
+model behavior and should be investigated rather than automatically discarded.
 
 Permutation and this marginal Monte Carlo approximation of SAGE can create
 unlikely profiles when values from different clients are combined. This matters
-most when predictors are strongly correlated.
-
-The SAGE decomposition starts from the average value of the selected loss
-function with no aligned variables, subtracts the mean SAGE contribution of
-every variable, and ends at the full model's loss. It uses the stored SAGE
-results; the app does not rerun the Monte Carlo calculation.
+most when predictors are strongly correlated. SAGE contributions are displayed
+from largest to smallest, but each contribution already averages many possible
+variable orders.
 
 References: [Permutation feature importance](https://christophm.github.io/interpretable-ml-book/feature-importance.html),
-[SAGE](https://github.com/iancovert/sage), and
-[SHAP](https://christophm.github.io/interpretable-ml-book/shap.html).
+[SAGE](https://github.com/iancovert/sage),
+[ROC and AUC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic),
+and [Kolmogorov–Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test).
