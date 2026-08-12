@@ -3,3 +3,4 @@ Description: Explore how PCA, t-SNE, and UMAP arrange Pokémon using stats, type
 Categories: machine learning, visualization, dimensionality reduction
 Runtime: server
 Status: draft
+AppURL: https://jbkunst-pokemon-dimensionality-reduction.share.connect.posit.cloud

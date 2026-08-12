@@ -2713,13 +2713,16 @@
   },
   "files": {
     "app.R": {
-      "checksum": "7f547c8f77983d9206d2a9a6cc3ac738"
+      "checksum": "3b6e68cd363da178eb02ac99bbcbd818"
+    },
+    "app_helpers.R": {
+      "checksum": "b82dc8e1cccd0f994a38bc1b97224785"
     },
     "credits.md": {
       "checksum": "3bc3e08fd06da6533daa2ec18d02552d"
     },
     "DESCRIPTION": {
-      "checksum": "e2ad84c997fc96ad57f5688b22242692"
+      "checksum": "4aeea50f14cbb3985c2c99cc9bf727b4"
     },
     "pokemon-data.rds": {
       "checksum": "cb5f6a8889d7d675e0eb8fa1b8e6c9a7"
