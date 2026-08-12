@@ -6,8 +6,8 @@ library(highcharter)
 library(vdltheme)
 
 # data --------------------------------------------------------------------
-app_dir <- if (file.exists("credit-importance.rds")) "." else "global-feature-importance"
-importance_data <- readRDS(file.path(app_dir, "credit-importance.rds"))
+app_dir <- if (file.exists("credit-quality.rds")) "." else "model-quality"
+importance_data <- readRDS(file.path(app_dir, "credit-quality.rds"))
 model_labels <- importance_data$metadata$model_labels
 
 variable_labels <- c(
@@ -162,56 +162,54 @@ sage_chart <- function(data, metric) {
 log_loss_chart <- function(model) {
   values <- importance_data$diagnostics$log_loss_values
   validate(need(
-    !is.null(values) && all(is.finite(values$individual_log_loss)),
-    "Regenerate credit-importance.rds to view individual log-loss."
+    !is.null(values) && all(c("status_bad", "score") %in% names(values)),
+    "Regenerate credit-quality.rds to view individual log-loss."
   ))
-  values <- values[values$model == model, ]
-  upper <- max(2, ceiling(stats::quantile(values$individual_log_loss, 0.99) * 2) / 2)
-  breaks <- seq(0, upper, length.out = 21L)
-  bin_width <- diff(breaks)[[1]]
-  colors <- c(train = "#adb5bd", test = primary_color)
-  means <- stats::aggregate(individual_log_loss ~ sample, values, mean)
+  values <- values[values$model == model & values$sample == "test", ]
+  pd_grid <- seq(0.005, 0.995, length.out = 200L)
 
-  chart <- highchart() |>
-    hc_chart(type = "column") |>
-    hc_subtitle(
-      text = sprintf("Final bin includes individual losses ≥ %.2f", tail(breaks, 2)[[1]]),
-      align = "right"
-    ) |>
-    hc_xAxis(
-      title = list(text = "Individual log-loss"),
-      plotLines = lapply(seq_len(nrow(means)), function(i) {
-        list(
-          value = means$individual_log_loss[[i]],
-          color = colors[[means$sample[[i]]]], width = 2,
-          dashStyle = if (means$sample[[i]] == "train") "ShortDash" else "Solid",
-          zIndex = 4
-        )
-      })
-    ) |>
-    hc_yAxis(title = list(text = "Share of observations"), min = 0) |>
+  highchart() |>
+    hc_chart(type = "line") |>
+    hc_xAxis(title = list(text = "Predicted PD"), min = 0, max = 1) |>
+    hc_yAxis(title = list(text = "Individual log-loss"), min = 0) |>
     hc_tooltip(
       headerFormat = "<b>{series.name}</b><br/>",
-      pointFormat = "Loss: {point.x:.2f}<br/>Share: {point.y:.1%}"
+      pointFormat = "Predicted PD: {point.x:.3f}<br/>Penalty: {point.y:.3f}"
     ) |>
-    hc_plotOptions(column = list(
-      grouping = FALSE, borderWidth = 0, pointRange = bin_width,
-      opacity = 0.55, animation = list(duration = 300)
-    ))
-
-  for (sample_name in names(colors)) {
-    losses <- values$individual_log_loss[values$sample == sample_name]
-    losses <- pmin(losses, upper - .Machine$double.eps^0.5)
-    distribution <- hist(losses, breaks = breaks, plot = FALSE, include.lowest = TRUE)
-    mean_loss <- means$individual_log_loss[means$sample == sample_name]
-    chart <- chart |> hc_add_series(
-      name = sprintf("%s (mean %.3f)", tools::toTitleCase(sample_name), mean_loss),
-      data = xy_points(distribution$mids, distribution$counts / length(losses)),
-      color = colors[[sample_name]], zIndex = if (sample_name == "test") 2 else 1
+    hc_plotOptions(
+      line = list(animation = list(duration = 300), marker = list(enabled = FALSE)),
+      scatter = list(
+        animation = list(duration = 300),
+        marker = list(radius = 2.5, symbol = "circle"), opacity = 0.35
+      )
+    ) |>
+    hc_add_series(
+      name = "Observed bad: -log(PD)", data = xy_points(pd_grid, -log(pd_grid)),
+      color = danger_color, lineWidth = 2, zIndex = 2
+    ) |>
+    hc_add_series(
+      name = "Observed good: -log(1 - PD)",
+      data = xy_points(pd_grid, -log(1 - pd_grid)),
+      color = primary_color, lineWidth = 2, zIndex = 2
+    ) |>
+    hc_add_series(
+      name = "Bad observations", type = "scatter",
+      data = xy_points(
+        values$score[values$status_bad == 1L],
+        values$individual_log_loss[values$status_bad == 1L]
+      ),
+      color = danger_color, opacity = 0.35, zIndex = 3,
+      showInLegend = FALSE
+    ) |>
+    hc_add_series(
+      name = "Good observations", type = "scatter",
+      data = xy_points(
+        values$score[values$status_bad == 0L],
+        values$individual_log_loss[values$status_bad == 0L]
+      ),
+      color = primary_color, opacity = 0.35, zIndex = 3,
+      showInLegend = FALSE
     )
-  }
-
-  chart
 }
 
 metric_chart <- function(model, metric) {
@@ -363,7 +361,7 @@ ui <- page_fillable(
   layout_sidebar(
     fillable = TRUE, padding = "0.75rem",
     sidebar = sidebar(
-      title = "Model Quality Decomposition",
+      title = "Model Quality Explorer",
       radioButtons(
         "model", tags$small("Model"),
         choices = stats::setNames(names(model_labels), model_labels),
@@ -388,9 +386,11 @@ ui <- page_fillable(
     ),
     layout_columns(
       col_widths = c(6, 6, 6, 6), row_heights = c(1, 1), gap = "0.75rem",
-      card(card_header(uiOutput("permutation_title")),
+      card(card_header(uiOutput(
+        "permutation_title", class = "d-block w-100"
+      )),
         highchartOutput("permutation_plot", height = "100%")),
-      card(card_header(uiOutput("metric_title")),
+      card(card_header(uiOutput("metric_title", class = "d-block w-100")),
         highchartOutput("metric_plot", height = "100%")),
       card(card_header("SAGE decomposition"),
         highchartOutput("sage_plot", height = "100%")),
@@ -404,21 +404,30 @@ ui <- page_fillable(
 server <- function(input, output, session) {
   output$permutation_title <- renderUI({
     value <- permutation_data(input$model, input$quality_metric)$model_quality
-    tagList(
-      "Permutation loss",
-      tags$small(
-        sprintf("Full model · %.3f", value),
-        class = "text-muted float-end"
-      )
+    tags$div(
+      class = "d-flex justify-content-between align-items-center",
+      tags$span("Permutation loss"),
+      tags$small(sprintf("Full model · %.3f", value), class = "text-muted")
     )
   })
 
   output$metric_title <- renderUI({
+    if (identical(input$quality_metric, "log_loss")) {
+      summary <- importance_data$diagnostics$quality_summary
+      value <- summary$log_loss[
+        summary$model == input$model & summary$sample == "test"
+      ]
+      return(tags$div(
+        class = "d-flex justify-content-between align-items-center",
+        tags$span("Log-loss penalty · test"),
+        tags$small(sprintf("Mean · %.3f", value), class = "text-muted")
+      ))
+    }
+
     switch(
       input$quality_metric,
       auc = "ROC curve · train vs test",
       gini = "CAP / Lorenz curve · train vs test",
-      log_loss = "Individual log-loss · train vs test",
       ks = "KS curves · train vs test"
     )
   })

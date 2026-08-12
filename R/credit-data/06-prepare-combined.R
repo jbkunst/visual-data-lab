@@ -30,7 +30,7 @@ artifact_paths <- c(
   models = "R/credit-data/credit-models.rds",
   shap = "shap-explorer/shap-credit.rds",
   effects = "variable-effects/credit-effects.rds",
-  importance = "global-feature-importance/credit-importance.rds",
+  importance = "model-quality/credit-quality.rds",
   evaluation = "model-evaluation/credit-evaluation.rds"
 )
 

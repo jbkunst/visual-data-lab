@@ -18,9 +18,10 @@ a loss, but the app translates the results back to the selected quality metric.
 The Gini diagnostic uses the CAP/Lorenz view and compares the observed model
 with random and perfect selection.
 
-Individual log-loss is small when the model assigns high probability to the
-observed outcome. A long right tail identifies confidently wrong predictions;
-these may be difficult cases, data errors, distribution shift, or overconfident
+The log-loss diagnostic shows the penalty attached to every predicted PD. For
+an observed default the penalty is `-log(PD)`; for an observed non-default it is
+`-log(1 - PD)`. Points high on either curve are confidently wrong predictions.
+They may be difficult cases, data errors, distribution shift, or overconfident
 model behavior and should be investigated rather than automatically discarded.
 
 Permutation and this marginal Monte Carlo approximation of SAGE can create
@@ -28,6 +29,10 @@ unlikely profiles when values from different clients are combined. This matters
 most when predictors are strongly correlated. SAGE contributions are displayed
 from largest to smallest, but each contribution already averages many possible
 variable orders.
+
+The SAGE starting point is estimated from independently shuffled profiles. It
+therefore approximates a random model rather than forcing a theoretical value;
+small differences across models are Monte Carlo variation.
 
 References: [Permutation feature importance](https://christophm.github.io/interpretable-ml-book/feature-importance.html),
 [SAGE](https://github.com/iancovert/sage),

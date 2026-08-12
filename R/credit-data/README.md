@@ -118,7 +118,7 @@ R/credit-data/credit-models.rds
 **Salida:**
 
 ```text
-global-feature-importance/credit-importance.rds
+model-quality/credit-quality.rds
 ```
 
 Contiene los resultados de permutation y SAGE en `importance_values`, además de
@@ -172,7 +172,7 @@ Al ejecutar `06-prepare-combined.R` quedan disponibles:
 ```text
 shap-explorer/shap-credit.rds
 variable-effects/credit-effects.rds
-global-feature-importance/credit-importance.rds
+model-quality/credit-quality.rds
 model-evaluation/credit-evaluation.rds
 R/credit-data/credit-analysis.rds
 ```
@@ -195,8 +195,8 @@ El objeto `credit-analysis.rds` tiene la siguiente estructura:
 | `explanations$shap_values` | Contribución local por modelo, caso y variable | SHAP Explorer |
 | `explanations$ice_values` | Predicciones ICE por modelo, caso, variable y grilla | Variable Effects |
 | `explanations$ale_values` | Efectos ALE locales y acumulados | Variable Effects |
-| `importance_values` | Permutation y SAGE por métrica | Model Quality Decomposition |
-| `importance_diagnostics` | ROC, KS, CAP/gains y pérdidas individuales | Model Quality Decomposition |
+| `importance_values` | Permutation y SAGE por métrica | Model Quality Explorer |
+| `importance_diagnostics` | ROC, KS, CAP/gains y pérdidas individuales | Model Quality Explorer |
 | `evaluation$threshold_curve` | Tasas ROC y brecha KS por umbral | Model Evaluation |
 | `evaluation$gains_curve` | Ganancia y lift acumulados, con empates agrupados | Model Evaluation |
 | `evaluation$summary` | Log-loss, AUC, Gini, KS y umbral KS | Model Evaluation |

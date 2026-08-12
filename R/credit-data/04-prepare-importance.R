@@ -258,7 +258,7 @@ importance_artifact <- list(
     gains_curves = gains_curves,
     quality_summary = quality_summary,
     log_loss_values = diagnostic_predictions |>
-      dplyr::select(model, sample, individual_log_loss)
+      dplyr::select(model, sample, status_bad, score, individual_log_loss)
   ),
   metadata = c(
     credit_models$metadata,
@@ -279,5 +279,5 @@ importance_artifact <- list(
 
 save_credit_artifact(
   importance_artifact,
-  "global-feature-importance/credit-importance.rds"
+  "model-quality/credit-quality.rds"
 )
