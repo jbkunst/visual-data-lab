@@ -67,13 +67,12 @@ pokemon_feature_matrix <- function(
   block_weights = c(
     continuous = 1,
     binary = 1,
-    types = 1,
     egg_groups = 1,
     species_traits = 1
   )
 ) {
   required_weights <- c(
-    "continuous", "binary", "types", "egg_groups", "species_traits"
+    "continuous", "binary", "egg_groups", "species_traits"
   )
 
   if (!all(required_weights %in% names(block_weights))) {
@@ -120,14 +119,6 @@ pokemon_feature_matrix <- function(
 
   # One-hot encode nominal variables. Keep the semantic groups separate so a
   # high-cardinality group does not automatically receive more total weight.
-  type_features <- feature_data |>
-    dplyr::transmute(
-      type_1 = factor(type_1),
-      type_2 = factor(type_2)
-    ) |>
-    stats::model.matrix(~ type_1 + type_2 - 1, data = _) |>
-    weight_feature_block(block_weights[["types"]])
-
   egg_group_features <- feature_data |>
     dplyr::transmute(
       egg_group_1 = factor(egg_group_1),
@@ -152,7 +143,6 @@ pokemon_feature_matrix <- function(
   features <- cbind(
     continuous_features,
     binary_features,
-    type_features,
     egg_group_features,
     species_trait_features
   )

@@ -77,10 +77,7 @@ run_projection <- function(
 # Used by output$embedding. It converts one row per Pokémon into explicit
 # Highcharts point options, including the stable ID sent back to Shiny on click.
 # Sprite sizes change presentation only; they never alter projected coordinates.
-make_points <- function(data, xy, highlight = "all", sprite_size = 28) {
-  spotlight_size <- sprite_size + 7
-  muted_size <- max(8, round(sprite_size * 0.3))
-
+make_points <- function(data, xy, sprite_size = 28) {
   data |>
     mutate(
       x = xy[, 1],
@@ -102,8 +99,7 @@ make_points <- function(data, xy, highlight = "all", sprite_size = 28) {
         is_legendary == 1 ~ "Legendary",
         is_baby == 1 ~ "Baby",
         TRUE ~ "—"
-      ),
-      highlighted = highlight == "all" | type_1 == highlight
+      )
     ) |>
     select(
       id, x, y, pokemon_label, type_1_label, type_2_label,
@@ -111,7 +107,7 @@ make_points <- function(data, xy, highlight = "all", sprite_size = 28) {
       hp, attack, defense, special_attack, special_defense, speed,
       capture_rate, base_happiness, hatch_counter,
       growth_rate_label, habitat_label, special_status,
-      sprite_url, artwork_url, highlighted
+      sprite_url, artwork_url
     ) |>
     purrr::pmap(function(
       id, x, y, pokemon_label, type_1_label, type_2_label,
@@ -119,7 +115,7 @@ make_points <- function(data, xy, highlight = "all", sprite_size = 28) {
       hp, attack, defense, special_attack, special_defense, speed,
       capture_rate, base_happiness, hatch_counter,
       growth_rate_label, habitat_label, special_status,
-      sprite_url, artwork_url, highlighted
+      sprite_url, artwork_url
     ) {
       list(
         pokemon_id = as.integer(id),
@@ -147,30 +143,116 @@ make_points <- function(data, xy, highlight = "all", sprite_size = 28) {
         special_status = special_status,
         artwork_url = artwork_url,
         color = type_color,
-        opacity = if (highlighted) 1 else 0.12,
         marker = list(
           symbol = sprintf("url(%s)", sprite_url),
-          width = if (highlight == "all") sprite_size else if (highlighted) spotlight_size else muted_size,
-          height = if (highlight == "all") sprite_size else if (highlighted) spotlight_size else muted_size
+          width = sprite_size, height = sprite_size
         )
       )
     })
 }
 
-# Used by output$embedding as a series below the sprites. A separate halo series
-# makes type highlighting visible without mutating or recalculating the map.
-make_halos <- function(data, xy, highlight = "all", sprite_size = 28) {
-  highlighted <- highlight == "all" | data$type_1 == highlight
+# Used below the sprites in each primary-type series. Halos provide a subtle
+# color field while remaining non-interactive, so sprites own hover and click.
+make_halos <- function(data, xy, sprite_size = 28) {
+  halo_colors <- vapply(data$type_color, function(color) {
+    rgb <- grDevices::col2rgb(color)
+    sprintf("rgba(%d,%d,%d,0.18)", rgb[1], rgb[2], rgb[3])
+  }, character(1))
+
   purrr::pmap(
-    list(xy[, 1], xy[, 2], data$type_color, highlighted),
-    function(x, y, color, highlighted) {
+    list(xy[, 1], xy[, 2], halo_colors),
+    function(x, y, color) {
       list(
         x = as.numeric(x), y = as.numeric(y),
-        color = if (highlight != "all" && highlighted) color else "rgba(0,0,0,0)",
+        color = color,
         marker = list(symbol = "circle", radius = (sprite_size + 12) / 2)
       )
     }
   )
+}
+
+# Used once when Highcharts loads. Highcharts exposes legend click but no native
+# legend-hover callback, so this binds mouse entry/exit to each rendered legend
+# item. Point hover remains untouched for tooltips; only the legend changes type
+# focus, and its existing click-to-toggle behavior is preserved.
+legend_type_focus_js <- htmlwidgets::JS(
+  "function () {
+    var chart = this;
+
+    function setFocus(typeKey) {
+      chart.series.forEach(function (series) {
+        var custom = series.options.custom || {};
+        var sameType = custom.typeKey === typeKey;
+        var opacity = custom.isHalo ? (sameType ? 1 : 0) : (sameType ? 1 : 0.12);
+        var group = series.markerGroup || series.group;
+        if (group) {
+          group.attr({ opacity: opacity });
+          if (sameType) group.toFront();
+        }
+      });
+    }
+
+    function resetFocus() {
+      chart.series.forEach(function (series) {
+        var custom = series.options.custom || {};
+        var group = series.markerGroup || series.group;
+        if (group) group.attr({ opacity: custom.isHalo ? 0 : 1 });
+      });
+    }
+
+    chart.series.forEach(function (series) {
+      if (!series.options.showInLegend) return;
+      var legendGroup = series.legendItem && series.legendItem.group
+        ? series.legendItem.group
+        : series.legendGroup;
+      var element = legendGroup && legendGroup.element;
+      if (!element || element.__pokemonTypeFocusBound) return;
+
+      element.__pokemonTypeFocusBound = true;
+      element.addEventListener('mouseenter', function () {
+        setFocus(series.options.custom.typeKey);
+      });
+      element.addEventListener('mouseleave', resetFocus);
+    });
+  }"
+)
+
+# Used by output$embedding to create one visible legend item per primary type.
+# Coordinates stay fixed: legend interaction only changes SVG group opacity.
+make_type_series <- function(data, xy, sprite_size = 28) {
+  points_by_type <- split(make_points(data, xy, sprite_size), data$type_1)
+  halos_by_type <- split(make_halos(data, xy, sprite_size), data$type_1)
+
+  sort(names(points_by_type)) |>
+    purrr::map(function(type_key) {
+      type_name <- pokemon_label(type_key)
+      sprite_id <- paste0("type-", type_key)
+
+      list(
+        list(
+          data = halos_by_type[[type_key]],
+          name = paste(type_name, "halo"), linkedTo = sprite_id,
+          turboThreshold = 0, showInLegend = FALSE,
+          enableMouseTracking = FALSE,
+          opacity = 0,
+          states = list(
+            inactive = list(opacity = 0),
+            hover = list(opacity = 0)
+          ),
+          custom = list(typeKey = type_key, isHalo = TRUE), zIndex = 1
+        ),
+        list(
+          data = points_by_type[[type_key]],
+          id = sprite_id, name = type_name,
+          color = unname(pokemon_type_colors[[type_key]]),
+          marker = list(symbol = "circle", radius = 5),
+          turboThreshold = 0, showInLegend = TRUE,
+          custom = list(typeKey = type_key, isHalo = FALSE),
+          zIndex = 2
+        )
+      )
+    }) |>
+    purrr::list_flatten()
 }
 
 # Used throughout the tooltip and fullscreen profile to turn API identifiers

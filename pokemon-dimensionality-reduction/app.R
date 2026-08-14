@@ -22,16 +22,14 @@ pokemon_bundle <- if (file.exists(data_file)) {
 pokemon <- pokemon_bundle$data
 
 similarity_presets <- list(
-  balanced = c(continuous = 1, binary = 1, types = 1, egg_groups = 1, species_traits = 1),
-  battle = c(continuous = 2, binary = 0.5, types = 0.5, egg_groups = 0.25, species_traits = 0.25),
-  types = c(continuous = 0.4, binary = 0.4, types = 2, egg_groups = 0.4, species_traits = 0.4),
-  ecology = c(continuous = 0.4, binary = 0.5, types = 0.5, egg_groups = 2, species_traits = 2)
+  balanced = c(continuous = 1, binary = 1, egg_groups = 1, species_traits = 1),
+  battle = c(continuous = 2, binary = 0.5, egg_groups = 0.25, species_traits = 0.25),
+  ecology = c(continuous = 0.4, binary = 0.5, egg_groups = 2, species_traits = 2)
 )
 
 recipe_labels <- c(
   balanced = "Balanced profile", battle = "Battle & morphology",
-  types = "Pokémon types", ecology = "Breeding & ecology",
-  custom = "Custom weights"
+  ecology = "Breeding & ecology", custom = "Custom weights"
 )
 
 # pokemon_feature_matrix() prepares the mixed data for every similarity recipe:
@@ -104,7 +102,7 @@ ui <- page_fillable(
         "recipe",
         vdltheme::input_label_vdl(
           "What makes Pokémon similar?",
-          "Changes the relative influence of stats, types, breeding, and species traits."
+          "Changes the relative influence of stats, breeding, and species traits. Type is only a visual overlay."
         ),
         choices = stats::setNames(names(recipe_labels), recipe_labels),
         selected = "balanced"
@@ -122,7 +120,6 @@ ui <- page_fillable(
         "input.recipe === 'custom'",
         sliderInput("weight_continuous", "Stats & morphology", 0, 3, 1, 0.25),
         sliderInput("weight_binary", "Special flags", 0, 3, 1, 0.25),
-        sliderInput("weight_types", "Types", 0, 3, 1, 0.25),
         sliderInput("weight_egg_groups", "Egg groups", 0, 3, 1, 0.25),
         sliderInput("weight_species_traits", "Species traits", 0, 3, 1, 0.25)
       ),
@@ -189,23 +186,6 @@ ui <- page_fillable(
         "Re-run projection",
         class = "btn btn-primary pokemon-run-button"
       ),
-      selectInput(
-        "highlight",
-        vdltheme::input_label_vdl(
-          "Spotlight primary type",
-          "Emphasizes one type without recalculating or moving the projection."
-        ),
-        choices = c(
-          "All types" = "all",
-          stats::setNames(names(pokemon_type_colors), stringr::str_to_title(names(pokemon_type_colors)))
-        ),
-        selected = "all"
-      ),
-      div(
-        class = "pokemon-sidebar-note",
-        strong(format(nrow(pokemon), big.mark = ",")),
-        " Pokémon · stats + capture + species traits"
-      ),
       accordion(
         open = FALSE,
         accordion_panel(
@@ -259,7 +239,8 @@ server <- function(input, output, session) {
         tags$ul(
           tags$li("Continuous features are median-imputed and standardized as z-scores."),
           tags$li("Binary features remain 0/1, so rare flags are not artificially amplified."),
-          tags$li("Types, egg groups, and species traits are one-hot encoded."),
+          tags$li("Egg groups and species traits are one-hot encoded."),
+          tags$li("Pokémon types are excluded, then reused only to color or spotlight the resulting map."),
           tags$li("Related columns remain in semantic blocks so wide blocks do not dominate by size alone.")
         ),
         tags$h5("Block weighting"),
@@ -288,19 +269,18 @@ server <- function(input, output, session) {
             class = "table table-sm pokemon-weight-table",
             tags$thead(tags$tr(
               tags$th("Profile"), tags$th("Stats"), tags$th("Flags"),
-              tags$th("Types"), tags$th("Egg groups"), tags$th("Species traits")
+              tags$th("Egg groups"), tags$th("Species traits")
             )),
             tags$tbody(
-              tags$tr(tags$th("Balanced"), tags$td("1"), tags$td("1"), tags$td("1"), tags$td("1"), tags$td("1")),
-              tags$tr(tags$th("Battle & morphology"), tags$td("2"), tags$td("0.5"), tags$td("0.5"), tags$td("0.25"), tags$td("0.25")),
-              tags$tr(tags$th("Pokémon types"), tags$td("0.4"), tags$td("0.4"), tags$td("2"), tags$td("0.4"), tags$td("0.4")),
-              tags$tr(tags$th("Breeding & ecology"), tags$td("0.4"), tags$td("0.5"), tags$td("0.5"), tags$td("2"), tags$td("2"))
+              tags$tr(tags$th("Balanced"), tags$td("1"), tags$td("1"), tags$td("1"), tags$td("1")),
+              tags$tr(tags$th("Battle & morphology"), tags$td("2"), tags$td("0.5"), tags$td("0.25"), tags$td("0.25")),
+              tags$tr(tags$th("Breeding & ecology"), tags$td("0.4"), tags$td("0.5"), tags$td("2"), tags$td("2"))
             )
           )
         ),
         tags$p(
           class = "small text-muted",
-          "Custom weights use the five sliders directly. A weight of 0 removes that block from the distance."
+          "Custom weights use the four sliders directly. A weight of 0 removes that block from the distance."
         ),
         tags$div(
           class = "pokemon-modal-note",
@@ -326,7 +306,6 @@ server <- function(input, output, session) {
     weights <- c(
       continuous = input$weight_continuous,
       binary = input$weight_binary,
-      types = input$weight_types,
       egg_groups = input$weight_egg_groups,
       species_traits = input$weight_species_traits
     )
@@ -380,22 +359,26 @@ server <- function(input, output, session) {
   output$chart_meta <- renderText({
     result <- projection()
     recipe <- unname(recipe_labels[[result$recipe]])
+    context <- paste(
+      recipe,
+      paste(format(nrow(result$data), big.mark = ","), "Pokémon"),
+      paste(ncol(result$x), "features"),
+      "type as overlay",
+      sep = " · "
+    )
 
     if (identical(result$method, "pca")) {
-      return(paste(
-        recipe, paste(format(nrow(result$data), big.mark = ","), "Pokémon"),
-        "linear baseline", sep = " · "
-      ))
+      return(paste(context, "linear baseline", sep = " · "))
     }
     if (identical(result$method, "tsne")) {
       return(paste0(
-        recipe, " · ", format(nrow(result$data), big.mark = ","), " Pokémon",
+        context,
         " · perplexity ", result$perplexity,
         " · ", result$iterations, " iterations"
       ))
     }
     paste0(
-      recipe, " · ", format(nrow(result$data), big.mark = ","), " Pokémon",
+      context,
       " · ", result$n_neighbors, " neighbors · min dist ", result$min_dist
     )
   })
@@ -403,9 +386,7 @@ server <- function(input, output, session) {
   output$embedding <- renderHighchart({
     xy <- projection()$xy
     selected <- projection()$data
-    highlight <- input$highlight
-    points <- make_points(selected, xy, highlight, input$sprite_size)
-    halos <- make_halos(selected, xy, highlight, input$sprite_size)
+    pokemon_series <- make_type_series(selected, xy, input$sprite_size)
 
     highchart() |>
       hc_chart(
@@ -413,22 +394,19 @@ server <- function(input, output, session) {
         zoomType = "xy",
         panning = list(enabled = TRUE, type = "xy"), panKey = "shift",
         backgroundColor = "transparent", animation = FALSE,
-        spacing = list(18, 18, 18, 18)
+        spacing = list(18, 18, 18, 18),
+        events = list(load = legend_type_focus_js)
       ) |>
       hc_title(text = NULL) |>
       hc_xAxis(visible = FALSE) |>
       hc_yAxis(visible = FALSE) |>
-      hc_add_series(
-        id = "type_halos", data = halos, name = "Primary type",
-        turboThreshold = 0, showInLegend = FALSE,
-        enableMouseTracking = FALSE, zIndex = 1
-      ) |>
-      hc_add_series(
-        id = "pokemon", data = points, name = "Pokémon",
-        turboThreshold = 0, showInLegend = FALSE, zIndex = 2,
-        point = list(events = list(click = JS(
-          "function () { Shiny.setInputValue('selected_pokemon_id', this.options.pokemon_id, {priority: 'event'}); }"
-        )))
+      hc_add_series_list(pokemon_series) |>
+      hc_legend(
+        enabled = TRUE, align = "center", verticalAlign = "top",
+        layout = "horizontal", symbolRadius = 5,
+        itemDistance = 12, margin = 12,
+        itemStyle = list(fontWeight = "normal"),
+        itemHoverStyle = list(fontWeight = "normal")
       ) |>
       hc_tooltip(
         useHTML = TRUE, outside = TRUE, borderWidth = 0,
@@ -437,9 +415,15 @@ server <- function(input, output, session) {
       ) |>
       hc_plotOptions(series = list(
         animation = FALSE, cursor = "pointer",
-        states = list(hover = list(
-          halo = list(size = 34, opacity = 0.24), brightness = 0.08
-        ))
+        point = list(events = list(click = JS(
+          "function () { Shiny.setInputValue('selected_pokemon_id', this.options.pokemon_id, {priority: 'event'}); }"
+        ))),
+        states = list(
+          inactive = list(opacity = 1),
+          hover = list(
+            halo = list(size = 34, opacity = 0.24), brightness = 0.08
+          )
+        )
       )) |>
       hc_credits(enabled = FALSE)
   })

@@ -1,6 +1,6 @@
 ## How it works
 
-The app builds a mixed-data feature matrix from the maintained PokeAPI tables. It combines morphology, battle stats, capture and breeding traits, binary species flags, Pokémon types, egg groups, growth rate, body color, body shape, and habitat.
+The app builds a mixed-data feature matrix from the maintained PokeAPI tables. It combines morphology, battle stats, capture and breeding traits, binary species flags, egg groups, growth rate, body color, body shape, and habitat. Pokémon type is deliberately excluded from the projection and used only to interpret the resulting map.
 
 ### Preprocessing
 
@@ -8,16 +8,18 @@ The feature space is prepared deliberately for PCA, t-SNE, and UMAP:
 
 - **Continuous variables** such as height, weight, battle stats, capture rate, happiness, hatch counter, and female ratio are median-imputed and standardized.
 - **Binary variables** such as legendary, mythical, baby, genderless, and form/gender flags stay as **0/1**. Rare flags are not standardized, because doing so could give a rare `1` an artificially huge z-score.
-- **Nominal variables** such as type, egg group, growth rate, color, shape, and habitat are one-hot encoded as **0/1** indicators.
+- **Nominal variables** such as egg group, growth rate, color, shape, and habitat are one-hot encoded as **0/1** indicators.
 - Feature blocks are divided by `sqrt(number of columns in the block)`. This prevents a categorical block from dominating Euclidean distance simply because it expands into many dummy columns.
 
 The block weights are explicit in `prepare_data.R` and all default to `1`, so the preprocessing is easy to inspect or tune later.
 
 First choose what **similarity** should mean. The balanced recipe gives every
 semantic block the same total weight. The other recipes emphasize battle and
-morphology, Pokémon types, or breeding and ecological traits. Custom weights
-make this definition explicit: a zero removes a block and larger values give it
-more influence over pairwise distances.
+morphology or breeding and ecological traits. Custom weights make this
+definition explicit: a zero removes a block and larger values give it more
+influence over pairwise distances. Type never enters this calculation, so the
+type colors can reveal structure without forcing Pokémon of the same type to be
+neighbors.
 
 Then choose a projection method and change its main parameters:
 
@@ -37,7 +39,8 @@ marker. Hover a Pokémon to see its official artwork, types, generation, size,
 battle stats, capture rate, happiness, growth rate, habitat, hatch counter, and
 legendary/mythical status.
 
-Use **Spotlight primary type** after a projection to emphasize one type without
+The legend above the map uses primary type only as an interpretive overlay.
+Hover a legend item to emphasize its group without
 recalculating or moving the map. The colored halos reproduce the type-oriented
 reading of the original Pokémon flexdashboard while keeping every Pokémon
 visible in the common projection.

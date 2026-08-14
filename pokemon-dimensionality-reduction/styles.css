@@ -196,17 +196,6 @@ body {
   background: var(--pokemon-blue-dark);
 }
 
-.pokemon-sidebar-note {
-  margin: 3px 0 14px;
-  padding: 9px 10px;
-  border-left: 4px solid var(--pokemon-yellow);
-  border-radius: 5px;
-  background: #fff9d9;
-  color: #4a4a3f;
-  font-size: 0.78rem;
-  line-height: 1.35;
-}
-
 .pokemon-card {
   height: 100%;
   border: 0 !important;
