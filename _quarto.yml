@@ -8,22 +8,24 @@ project:
 
 website:
   title: "Visual Data Lab"
-  description: "Interactive experiments in data, statistics, and machine learning."
+  description: "Interactive experiments for exploring data, statistical models, and machine-learning algorithms through visualization."
   site-url: "https://jbkunst.github.io/visual-data-lab/"
   search: false
   navbar:
+    title: "jk"
     pinned: true
-    left:
-      - href: index.qmd
-        text: Gallery
     right:
-      - icon: github
+      - text: Blog ↗
+        href: "https://jkunst.com/blog/"
+      - text: Visual Data Lab
+        href: index.qmd
+      - text: GitHub ↗
         href: "https://github.com/jbkunst/visual-data-lab"
-        aria-label: "GitHub repository"
 
 format:
   html:
     theme: cosmo
+    css: site-assets/catalog.css
     include-in-header:
       text: |
         <meta name="google-site-verification" content="pLmyRYfU13GaMc8sk2zMHqhTE6r4PvcAJ5C4bK5VW9E">

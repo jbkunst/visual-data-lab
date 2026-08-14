@@ -1,9 +1,12 @@
 ---
 title: "Visual Data Lab"
-description: "Interactive experiments in data, statistics, and machine learning."
+description: "Interactive experiments for exploring data, statistical models, and machine-learning algorithms through visualization."
+lang: en
 open-graph: true
 twitter-card: true
 page-layout: full
+body-classes: catalog-page
+title-block-banner: true
 listing:
   - id: apps-list
     contents: apps.yml
@@ -18,12 +21,6 @@ listing:
       - description
       - image
 ---
-
-:::{.catalog-hero}
-:::{.catalog-kicker}
-Explore data, models, and algorithms through interactive visualizations.
-:::
-:::
 
 :::{#apps-list}
 :::

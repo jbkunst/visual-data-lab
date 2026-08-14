@@ -1,0 +1,103 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500&display=swap");
+
+body.catalog-page {
+  color: #102a43;
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+#quarto-header {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  right: 0;
+  left: 0;
+}
+
+#quarto-header .navbar {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0 3rem;
+  border: 0;
+  background: #fff;
+  box-shadow: none;
+}
+
+#quarto-header .navbar-container {
+  max-width: none;
+  padding: 0;
+}
+
+#quarto-header .navbar-brand {
+  margin-right: 2rem;
+  padding: 0;
+  color: #102a43;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: -.06em;
+  text-transform: lowercase;
+}
+
+#quarto-header .navbar-nav {
+  gap: .4rem;
+}
+
+#quarto-header .nav-link {
+  color: #31546d;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: .78rem;
+  font-weight: 400;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#quarto-header .navbar-brand:hover,
+#quarto-header .nav-link:hover,
+#quarto-header .nav-link.active {
+  color: #102a43;
+}
+
+body.catalog-page .quarto-title-banner {
+  padding-top: 8.5rem;
+  padding-bottom: 3.5rem;
+  border: 0;
+  border-bottom: 1px solid #dbe4ec;
+  background: #fff;
+  color: #102a43;
+}
+
+body.catalog-page #title-block-header .title {
+  color: #102a43;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 3.6rem;
+  font-weight: 200;
+  line-height: 1.05;
+}
+
+body.catalog-page .quarto-title-banner .description {
+  max-width: 720px;
+  margin-top: .65rem;
+  color: #31546d;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+body.catalog-page .quarto-listing .listing-title {
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+@media (max-width: 700px) {
+  #quarto-header .navbar {
+    min-height: 5rem;
+    padding: 0 1.4rem;
+  }
+
+  body.catalog-page .quarto-title-banner {
+    padding-top: 7rem;
+    padding-bottom: 2.5rem;
+  }
+
+  body.catalog-page #title-block-header .title {
+    font-size: 2.7rem;
+  }
+}
