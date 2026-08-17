@@ -247,7 +247,7 @@ ui <- page_fillable(
       tags$small(htmltools::includeMarkdown("credits.md"))
     ),
     layout_columns(
-      col_widths = c(12, 6, 6, 6, 6),
+      col_widths = c(12, 6, 6, 4, 4, 4),
       gap = "0.75rem",
       card(
         card_header(uiOutput("main_title")),
