@@ -26,6 +26,11 @@ group_colors <- function(groups) {
   setNames(palette[index], groups)
 }
 
+empty_plot <- function(text) {
+  plot.new()
+  text(0.5, 0.5, text, cex = 0.95, col = "grey40")
+}
+
 simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   set.seed(seed)
 
@@ -91,12 +96,58 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
 fit_selected_model <- function(dat, model) {
   switch(
     model,
+    none = NULL,
     pooled = lm(y ~ x, data = dat),
     separate = lm(y ~ x * group, data = dat),
     ri = lmer(y ~ x + (1 | group), data = dat, REML = TRUE),
     rs = lmer(y ~ x + (0 + x | group), data = dat, REML = TRUE),
     ris = lmer(y ~ x + (1 + x | group), data = dat, REML = TRUE)
   )
+}
+
+predict_selected_model <- function(fit, newdata) {
+  if (inherits(fit, "merMod")) {
+    predict(fit, newdata = newdata, allow.new.levels = TRUE)
+  } else {
+    predict(fit, newdata = newdata)
+  }
+}
+
+split_grouped_data <- function(dat, seed, train_share = 0.7) {
+  set.seed(seed + 10000L)
+
+  train_rows <- unlist(
+    lapply(split(seq_len(nrow(dat)), dat$group), function(index) {
+      n_train <- floor(length(index) * train_share)
+      n_train <- max(2L, min(length(index) - 1L, n_train))
+      sample(index, n_train)
+    }),
+    use.names = FALSE
+  )
+
+  list(
+    train = dat[train_rows, , drop = FALSE],
+    test = dat[-train_rows, , drop = FALSE]
+  )
+}
+
+compare_models <- function(dat, seed) {
+  split <- split_grouped_data(dat, seed)
+  models <- c("pooled", "separate", "ri", "rs", "ris")
+
+  rows <- lapply(models, function(model) {
+    mod <- suppressWarnings(fit_selected_model(split$train, model))
+    pred_train <- predict_selected_model(mod, split$train)
+    pred_test <- predict_selected_model(mod, split$test)
+
+    data.frame(
+      model = model,
+      train_rmse = sqrt(mean((split$train$y - pred_train)^2)),
+      test_rmse = sqrt(mean((split$test$y - pred_test)^2))
+    )
+  })
+
+  do.call(rbind, rows)
 }
 
 truth_lines <- function(sim) {
@@ -130,7 +181,7 @@ fitted_lines <- function(dat, fit) {
         x = seq(min(observed$x), max(observed$x), length.out = 100),
         group = factor(g, levels = groups)
       )
-      grid$y <- predict(fit, newdata = grid)
+      grid$y <- predict_selected_model(fit, grid)
       grid
     })
   )
@@ -140,15 +191,6 @@ no_pool_coefficients <- function(dat) {
   fits <- lapply(split(dat, dat$group), function(d) coef(lm(y ~ x, data = d)))
   out <- do.call(rbind, fits)
   colnames(out) <- c("intercept", "slope")
-  out
-}
-
-truth_coefficients <- function(sim) {
-  out <- cbind(
-    intercept = sim$truth$beta0 + sim$effects$b0,
-    slope = sim$truth$beta1 + sim$effects$b1
-  )
-  rownames(out) <- as.character(sim$effects$group)
   out
 }
 
@@ -205,35 +247,8 @@ estimated_sds <- function(fit) {
   out
 }
 
-coefficient_recovery <- function(sim, fit, model) {
-  truth <- truth_coefficients(sim)
-  no_pool <- no_pool_coefficients(sim$data)
-  selected <- current_group_coefficients(sim$data, fit, model)
-  groups <- rownames(truth)
-
-  list(
-    table = data.frame(
-      Group = groups,
-      `True int.` = truth[groups, "intercept"],
-      `No pool int.` = no_pool[groups, "intercept"],
-      `Model int.` = selected[groups, "intercept"],
-      `True slope` = truth[groups, "slope"],
-      `No pool slope` = no_pool[groups, "slope"],
-      `Model slope` = selected[groups, "slope"],
-      check.names = FALSE
-    ),
-    no_pool_rmse = c(
-      intercept = sqrt(mean((no_pool[, "intercept"] - truth[, "intercept"])^2)),
-      slope = sqrt(mean((no_pool[, "slope"] - truth[, "slope"])^2))
-    ),
-    selected_rmse = c(
-      intercept = sqrt(mean((selected[, "intercept"] - truth[, "intercept"])^2)),
-      slope = sqrt(mean((selected[, "slope"] - truth[, "slope"])^2))
-    )
-  )
-}
-
 model_labels <- c(
+  none = "No model",
   pooled = "Complete pooling",
   separate = "No pooling",
   ri = "Random intercept",
@@ -283,13 +298,13 @@ ui <- page_fillable(
       .mixed-qq { grid-column: 3; grid-row: 2; }
       .mixed-random { grid-column: 1; grid-row: 3; }
       .mixed-shrinkage { grid-column: 2; grid-row: 3; }
-      .mixed-recovery { grid-column: 3; grid-row: 3; }
+      .mixed-comparison { grid-column: 3; grid-row: 3; }
 
       .mixed-grid .card { min-width: 0; min-height: 0; }
       .mixed-grid .shiny-plot-output { height: 100% !important; min-height: 0; }
-      .recovery-wrap { overflow: auto; padding: 0.25rem 0.4rem; font-size: 0.72rem; }
-      .recovery-wrap table { white-space: nowrap; margin-bottom: 0; }
-      .recovery-summary { padding: 0.25rem 0.4rem 0; font-size: 0.72rem; }
+      .comparison-wrap { overflow: auto; padding: 0.25rem 0.4rem; font-size: 0.74rem; }
+      .comparison-wrap table { white-space: nowrap; margin-bottom: 0; }
+      .comparison-summary { padding: 0.3rem 0.5rem 0; font-size: 0.74rem; }
 
       @media (max-width: 1100px) {
         .mixed-grid {
@@ -302,7 +317,7 @@ ui <- page_fillable(
         }
 
         .mixed-main { grid-column: 1 / -1; grid-row: auto; min-height: 65vh; }
-        .mixed-residuals, .mixed-qq, .mixed-random, .mixed-shrinkage, .mixed-recovery {
+        .mixed-residuals, .mixed-qq, .mixed-random, .mixed-shrinkage, .mixed-comparison {
           grid-column: auto;
           grid-row: auto;
           min-height: 260px;
@@ -336,7 +351,7 @@ ui <- page_fillable(
           "Keeps the data fixed and changes how group structure is modeled."
         ),
         choices = setNames(names(model_labels), model_labels),
-        selected = "ri"
+        selected = "none"
       ),
       tags$div(
         class = "formula-block",
@@ -399,10 +414,10 @@ ui <- page_fillable(
         plotOutput("shrinkage_plot", width = "100%", height = "100%")
       ),
       card(
-        class = "mixed-recovery",
-        card_header("Coefficient recovery"),
-        tags$div(class = "recovery-summary", uiOutput("recovery_summary")),
-        tags$div(class = "recovery-wrap", tableOutput("recovery_table"))
+        class = "mixed-comparison",
+        card_header("Train / test RMSE"),
+        tags$div(class = "comparison-summary", uiOutput("comparison_summary")),
+        tags$div(class = "comparison-wrap", tableOutput("comparison_table"))
       )
     )
   )
@@ -429,8 +444,9 @@ server <- function(input, output, session) {
     fit_selected_model(sim()$data, input$model)
   })
 
-  recovery <- reactive({
-    coefficient_recovery(sim(), fit(), input$model)
+  comparison <- reactive({
+    req(input$model != "none")
+    compare_models(sim()$data, seed())
   })
 
   output$truth_formula <- renderUI({
@@ -470,6 +486,10 @@ server <- function(input, output, session) {
   })
 
   output$fit_formula <- renderUI({
+    if (input$model == "none") {
+      return(tags$div(class = "text-muted", "No fitted model"))
+    }
+
     math <- switch(
       input$model,
       pooled = "y_{ij} = \\beta_0 + \\beta_1x_{ij} + \\varepsilon_{ij}",
@@ -497,6 +517,7 @@ server <- function(input, output, session) {
   output$pooling_note <- renderUI({
     text <- switch(
       input$model,
+      none = "Explore the grouped data before fitting a model.",
       pooled = "Complete pooling · one relationship is shared by every group.",
       separate = "No pooling · each group gets its own OLS relationship.",
       "Partial pooling · group deviations are estimated jointly and shrink toward zero."
@@ -506,6 +527,15 @@ server <- function(input, output, session) {
   })
 
   output$model_check <- renderUI({
+    if (input$model == "none") {
+      return(
+        tags$div(
+          class = "small mt-2 mb-2 text-muted",
+          "No model selected"
+        )
+      )
+    }
+
     mod <- fit()
     residual_mean <- mean(residuals(mod))
 
@@ -558,9 +588,6 @@ server <- function(input, output, session) {
   output$main_plot <- renderPlot({
     simulation <- sim()
     dat <- simulation$data
-    mod <- fit()
-    truth <- truth_lines(simulation)
-    fitted <- fitted_lines(dat, mod)
     groups <- levels(dat$group)
     cols <- group_colors(groups)
 
@@ -573,6 +600,14 @@ server <- function(input, output, session) {
       ylab = "y",
       main = ""
     )
+
+    if (input$model == "none") {
+      return(invisible())
+    }
+
+    mod <- fit()
+    truth <- truth_lines(simulation)
+    fitted <- fitted_lines(dat, mod)
 
     for (g in groups) {
       dtruth <- truth[truth$group == g, ]
@@ -599,6 +634,11 @@ server <- function(input, output, session) {
   })
 
   output$residual_plot <- renderPlot({
+    if (input$model == "none") {
+      empty_plot("Select a fitted model")
+      return(invisible())
+    }
+
     dat <- sim()$data
     mod <- fit()
     groups <- levels(dat$group)
@@ -620,6 +660,11 @@ server <- function(input, output, session) {
   })
 
   output$qq_plot <- renderPlot({
+    if (input$model == "none") {
+      empty_plot("Select a fitted model")
+      return(invisible())
+    }
+
     dat <- sim()$data
     r <- residuals(fit())
     groups <- levels(dat$group)
@@ -640,12 +685,15 @@ server <- function(input, output, session) {
   })
 
   output$random_effects_plot <- renderPlot({
+    if (input$model == "none") {
+      empty_plot("Select a fitted model")
+      return(invisible())
+    }
+
     mod <- fit()
 
     if (!inherits(mod, "merMod")) {
-      plot.new()
-      text(0.5, 0.55, "No random effects in this model", cex = 1.05)
-      text(0.5, 0.43, "Complete/no pooling do not estimate b_j", cex = 0.85)
+      empty_plot("This model has no random effects")
       return(invisible())
     }
 
@@ -691,6 +739,11 @@ server <- function(input, output, session) {
   })
 
   output$shrinkage_plot <- renderPlot({
+    if (input$model == "none") {
+      empty_plot("Select a fitted model")
+      return(invisible())
+    }
+
     dat <- sim()$data
     mod <- fit()
     groups <- levels(dat$group)
@@ -756,24 +809,35 @@ server <- function(input, output, session) {
     )
   })
 
-  output$recovery_summary <- renderUI({
-    x <- recovery()
+  output$comparison_summary <- renderUI({
+    if (input$model == "none") {
+      return(tags$span(class = "text-muted", "Select a fitted model to compare generalization."))
+    }
 
-    tags$div(
-      tags$div(
-        tags$strong("No pooling RMSE: "),
-        sprintf("intercept %.2f · slope %.2f", x$no_pool_rmse["intercept"], x$no_pool_rmse["slope"])
-      ),
-      tags$div(
-        tags$strong(paste0(model_labels[[input$model]], " RMSE: ")),
-        sprintf("intercept %.2f · slope %.2f", x$selected_rmse["intercept"], x$selected_rmse["slope"])
-      )
+    tags$span(
+      "70% train / 30% test within each group. Test contains unseen observations from the same groups."
     )
   })
 
-  output$recovery_table <- renderTable(
+  output$comparison_table <- renderTable(
     {
-      recovery()$table
+      if (input$model == "none") {
+        return(NULL)
+      }
+
+      x <- comparison()
+      best <- which.min(x$test_rmse)
+
+      data.frame(
+        Model = paste0(
+          unname(model_labels[x$model]),
+          ifelse(x$model == input$model, "  ← selected", "")
+        ),
+        Train = x$train_rmse,
+        Test = x$test_rmse,
+        Best = ifelse(seq_len(nrow(x)) == best, "✓", ""),
+        check.names = FALSE
+      )
     },
     digits = 2,
     striped = TRUE,
