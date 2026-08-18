@@ -21,6 +21,8 @@ where the group deviations are centered at zero and the observation noise is nor
 
 Depending on the selected data structure, the random-intercept or random-slope variance can be exactly zero.
 
+For scenarios with intercept differences, groups are observed over partly different ranges of \\(x\\). Those ranges are generated independently of the random effects; they simply make the contrast between a pooled relationship and within-group relationships easier to see.
+
 ### Pooling
 
 **Complete pooling** ignores group differences and estimates one relationship for everyone.
