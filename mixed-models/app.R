@@ -31,7 +31,21 @@ empty_plot <- function(text) {
   text(0.5, 0.5, text, cex = 0.95, col = "grey40")
 }
 
-simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
+make_group_sizes <- function(pattern, n_groups, n_per_group) {
+  if (pattern == "balanced") {
+    return(rep(as.integer(n_per_group), n_groups))
+  }
+
+  as.integer(round(exp(seq(log(4), log(60), length.out = n_groups))))
+}
+
+simulate_grouped_data <- function(
+  structure,
+  n_groups,
+  n_per_group,
+  group_size_pattern,
+  seed
+) {
   set.seed(seed)
 
   beta0 <- 2
@@ -42,6 +56,7 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   rho <- if (structure == "both") 0.35 else 0
 
   groups <- paste0("G", seq_len(n_groups))
+  sizes <- make_group_sizes(group_size_pattern, n_groups, n_per_group)
   z0 <- rnorm(n_groups)
   z1 <- rnorm(n_groups)
   b0 <- sigma_b0 * z0
@@ -62,13 +77,15 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   dat <- do.call(
     rbind,
     lapply(seq_len(n_groups), function(i) {
+      n_i <- sizes[i]
+
       x <- if (structure %in% c("intercept", "both")) {
-        sort(x_centers[i] + runif(n_per_group, -0.85, 0.85))
+        sort(x_centers[i] + runif(n_i, -0.85, 0.85))
       } else {
-        sort(runif(n_per_group, -2, 2))
+        sort(runif(n_i, -2, 2))
       }
 
-      epsilon <- rnorm(n_per_group, 0, sigma_e)
+      epsilon <- rnorm(n_i, 0, sigma_e)
       y <- beta0 + b0[i] + (beta1 + b1[i]) * x + epsilon
 
       data.frame(
@@ -82,6 +99,7 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   list(
     data = dat,
     effects = effects,
+    group_sizes = setNames(sizes, groups),
     truth = list(
       beta0 = beta0,
       beta1 = beta1,
@@ -136,14 +154,40 @@ compare_models <- function(dat, seed) {
   models <- c("pooled", "separate", "ri", "rs", "ris")
 
   rows <- lapply(models, function(model) {
-    mod <- suppressWarnings(fit_selected_model(split$train, model))
-    pred_train <- predict_selected_model(mod, split$train)
-    pred_test <- predict_selected_model(mod, split$test)
+    mod <- tryCatch(
+      suppressWarnings(fit_selected_model(split$train, model)),
+      error = function(e) NULL
+    )
+
+    if (is.null(mod)) {
+      return(
+        data.frame(
+          model = model,
+          train_rmse = NA_real_,
+          test_rmse = NA_real_,
+          equal_group_test_rmse = NA_real_
+        )
+      )
+    }
+
+    pred_train <- tryCatch(
+      predict_selected_model(mod, split$train),
+      error = function(e) rep(NA_real_, nrow(split$train))
+    )
+    pred_test <- tryCatch(
+      predict_selected_model(mod, split$test),
+      error = function(e) rep(NA_real_, nrow(split$test))
+    )
+
+    train_error2 <- (split$train$y - pred_train)^2
+    test_error2 <- (split$test$y - pred_test)^2
+    group_mse <- tapply(test_error2, split$test$group, mean, na.rm = TRUE)
 
     data.frame(
       model = model,
-      train_rmse = sqrt(mean((split$train$y - pred_train)^2)),
-      test_rmse = sqrt(mean((split$test$y - pred_test)^2))
+      train_rmse = sqrt(mean(train_error2, na.rm = TRUE)),
+      test_rmse = sqrt(mean(test_error2, na.rm = TRUE)),
+      equal_group_test_rmse = sqrt(mean(group_mse, na.rm = TRUE))
     )
   })
 
@@ -249,8 +293,8 @@ estimated_sds <- function(fit) {
 
 model_labels <- c(
   none = "No model",
-  pooled = "Complete pooling",
-  separate = "No pooling",
+  pooled = "Global model",
+  separate = "Group-specific models",
   ri = "Random intercept",
   rs = "Random slope",
   ris = "Random intercept + slope"
@@ -302,9 +346,9 @@ ui <- page_fillable(
 
       .mixed-grid .card { min-width: 0; min-height: 0; }
       .mixed-grid .shiny-plot-output { height: 100% !important; min-height: 0; }
-      .comparison-wrap { overflow: auto; padding: 0.25rem 0.4rem; font-size: 0.74rem; }
+      .comparison-wrap { overflow: auto; padding: 0.25rem 0.4rem; font-size: 0.72rem; }
       .comparison-wrap table { white-space: nowrap; margin-bottom: 0; }
-      .comparison-summary { padding: 0.3rem 0.5rem 0; font-size: 0.74rem; }
+      .comparison-summary { padding: 0.3rem 0.5rem 0; font-size: 0.72rem; }
 
       @media (max-width: 1100px) {
         .mixed-grid {
@@ -367,14 +411,27 @@ ui <- page_fillable(
         value = 6,
         step = 1
       ),
-      sliderInput(
-        "n_per_group",
-        tags$small("Observations per group"),
-        min = 5,
-        max = 40,
-        value = 18,
-        step = 1
+      radioButtons(
+        "group_size_pattern",
+        input_label_vdl(
+          "Group sizes",
+          "Balanced gives every group the same amount of data. Unbalanced mixes small and large groups."
+        ),
+        choices = c("Balanced" = "balanced", "Unbalanced" = "unbalanced"),
+        selected = "unbalanced"
       ),
+      conditionalPanel(
+        condition = "input.group_size_pattern == 'balanced'",
+        sliderInput(
+          "n_per_group",
+          tags$small("Observations per group"),
+          min = 5,
+          max = 40,
+          value = 18,
+          step = 1
+        )
+      ),
+      uiOutput("group_size_note"),
       actionButton("resimulate", "Resimulate data", width = "100%"),
       uiOutput("model_check"),
       accordion(
@@ -436,6 +493,7 @@ server <- function(input, output, session) {
       structure = input$data_structure,
       n_groups = input$n_groups,
       n_per_group = input$n_per_group,
+      group_size_pattern = input$group_size_pattern,
       seed = seed()
     )
   })
@@ -447,6 +505,23 @@ server <- function(input, output, session) {
   comparison <- reactive({
     req(input$model != "none")
     compare_models(sim()$data, seed())
+  })
+
+  output$group_size_note <- renderUI({
+    sizes <- make_group_sizes(
+      input$group_size_pattern,
+      input$n_groups,
+      input$n_per_group
+    )
+    groups <- paste0("G", seq_len(input$n_groups))
+
+    tags$div(
+      class = "small text-muted mb-2",
+      paste0(
+        "n by group: ",
+        paste(paste0(groups, "=", sizes), collapse = " · ")
+      )
+    )
   })
 
   output$truth_formula <- renderUI({
@@ -518,8 +593,8 @@ server <- function(input, output, session) {
     text <- switch(
       input$model,
       none = "Explore the grouped data before fitting a model.",
-      pooled = "Complete pooling · one relationship is shared by every group.",
-      separate = "No pooling · each group gets its own OLS relationship.",
+      pooled = "Complete pooling · one global relationship is shared by every group.",
+      separate = "No pooling · each group gets an independent OLS relationship.",
       "Partial pooling · group deviations are estimated jointly and shrink toward zero."
     )
 
@@ -815,7 +890,7 @@ server <- function(input, output, session) {
     }
 
     tags$span(
-      "70% train / 30% test within each group. Test contains unseen observations from the same groups."
+      "70% train / 30% test within each group. Test weights rows; Equal-group gives every group the same weight."
     )
   })
 
@@ -826,7 +901,8 @@ server <- function(input, output, session) {
       }
 
       x <- comparison()
-      best <- which.min(x$test_rmse)
+      score <- replace(x$equal_group_test_rmse, is.na(x$equal_group_test_rmse), Inf)
+      best <- which.min(score)
 
       data.frame(
         Model = paste0(
@@ -835,6 +911,7 @@ server <- function(input, output, session) {
         ),
         Train = x$train_rmse,
         Test = x$test_rmse,
+        `Equal-group test` = x$equal_group_test_rmse,
         Best = ifelse(seq_len(nrow(x)) == best, "✓", ""),
         check.names = FALSE
       )
