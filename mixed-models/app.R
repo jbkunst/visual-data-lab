@@ -33,7 +33,6 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   groups <- paste0("G", seq_len(n_groups))
   z0 <- rnorm(n_groups)
   z1 <- rnorm(n_groups)
-
   b0 <- sigma_b0 * z0
   b1 <- sigma_b1 * (rho * z0 + sqrt(1 - rho^2) * z1)
 
@@ -190,6 +189,60 @@ structure_labels <- c(
 ui <- page_fillable(
   theme = apptheme,
   padding = 0,
+  tags$head(
+    tags$style(HTML("
+      .formula-block {
+        margin: -0.15rem 0 0.75rem 0;
+        padding: 0.55rem 0.65rem;
+        border-left: 3px solid var(--bs-primary);
+        background: color-mix(in srgb, var(--bs-primary) 5%, transparent);
+        font-size: 0.82rem;
+      }
+
+      .formula-block code {
+        display: block;
+        margin-top: 0.25rem;
+        white-space: normal;
+      }
+
+      .mixed-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(230px, 0.55fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(170px, 0.55fr);
+        gap: 0.75rem;
+        width: 100%;
+        height: calc(100vh - 1.5rem);
+        min-height: 760px;
+      }
+
+      .mixed-main { grid-column: 1 / span 2; grid-row: 1 / span 2; }
+      .mixed-residuals { grid-column: 3; grid-row: 1; }
+      .mixed-qq { grid-column: 3; grid-row: 2; }
+      .mixed-random { grid-column: 1; grid-row: 3; }
+      .mixed-shrinkage { grid-column: 2; grid-row: 3; }
+      .mixed-variance { grid-column: 3; grid-row: 3; }
+
+      .mixed-grid .card { min-width: 0; min-height: 0; }
+      .mixed-grid .shiny-plot-output { height: 100% !important; min-height: 0; }
+
+      @media (max-width: 1100px) {
+        .mixed-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto;
+          height: auto;
+          min-height: 0;
+        }
+
+        .mixed-main { grid-column: 1 / -1; grid-row: auto; min-height: 65vh; }
+        .mixed-residuals, .mixed-qq, .mixed-random, .mixed-shrinkage, .mixed-variance {
+          grid-column: auto;
+          grid-row: auto;
+          min-height: 260px;
+        }
+      }
+    "))
+  ),
   layout_sidebar(
     fillable = TRUE,
     padding = "0.75rem",
@@ -204,6 +257,11 @@ ui <- page_fillable(
         choices = setNames(names(structure_labels), structure_labels),
         selected = "both"
       ),
+      tags$div(
+        class = "formula-block",
+        tags$strong("Underlying model"),
+        uiOutput("truth_formula")
+      ),
       radioButtons(
         "model",
         input_label_vdl(
@@ -212,6 +270,12 @@ ui <- page_fillable(
         ),
         choices = setNames(names(model_labels), model_labels),
         selected = "ri"
+      ),
+      tags$div(
+        class = "formula-block",
+        tags$strong("Fitted model"),
+        uiOutput("fit_formula"),
+        uiOutput("pooling_note")
       ),
       sliderInput(
         "n_groups",
@@ -230,12 +294,6 @@ ui <- page_fillable(
         step = 1
       ),
       actionButton("resimulate", "Resimulate data", width = "100%"),
-      tags$hr(),
-      tags$small(tags$strong("Underlying model")),
-      uiOutput("truth_formula"),
-      tags$small(tags$strong("Fitted model")),
-      uiOutput("fit_formula"),
-      uiOutput("pooling_note"),
       uiOutput("model_check"),
       accordion(
         open = FALSE,
@@ -246,32 +304,37 @@ ui <- page_fillable(
       ),
       tags$small(htmltools::includeMarkdown("credits.md"))
     ),
-    layout_columns(
-      col_widths = c(12, 6, 6, 4, 4, 4),
-      gap = "0.75rem",
+    tags$div(
+      class = "mixed-grid",
       card(
+        class = "mixed-main",
         card_header(uiOutput("main_title")),
-        plotOutput("main_plot", width = "100%", height = "45vh")
+        plotOutput("main_plot", width = "100%", height = "100%")
       ),
       card(
+        class = "mixed-residuals",
         card_header("Residuals vs fitted"),
-        plotOutput("residual_plot", width = "100%", height = "27vh")
+        plotOutput("residual_plot", width = "100%", height = "100%")
       ),
       card(
+        class = "mixed-qq",
         card_header("Normal Q-Q"),
-        plotOutput("qq_plot", width = "100%", height = "27vh")
+        plotOutput("qq_plot", width = "100%", height = "100%")
       ),
       card(
+        class = "mixed-random",
         card_header("Random effects"),
-        plotOutput("random_effects_plot", width = "100%", height = "27vh")
+        plotOutput("random_effects_plot", width = "100%", height = "100%")
       ),
       card(
+        class = "mixed-shrinkage",
         card_header("Pooling / shrinkage"),
-        plotOutput("shrinkage_plot", width = "100%", height = "27vh")
+        plotOutput("shrinkage_plot", width = "100%", height = "100%")
       ),
       card(
+        class = "mixed-variance",
         card_header("Variance components"),
-        plotOutput("variance_plot", width = "100%", height = "27vh")
+        plotOutput("variance_plot", width = "100%", height = "100%")
       )
     )
   )
@@ -367,7 +430,7 @@ server <- function(input, output, session) {
       "Partial pooling · group deviations are estimated jointly and shrink toward zero."
     )
 
-    tags$div(class = "small text-muted mt-2", tags$strong("Information sharing: "), text)
+    tags$div(class = "small text-muted mt-1", text)
   })
 
   output$model_check <- renderUI({
@@ -377,7 +440,7 @@ server <- function(input, output, session) {
     if (!inherits(mod, "merMod")) {
       return(
         tags$div(
-          class = "small mt-2",
+          class = "small mt-2 mb-2",
           tags$strong("Model check"),
           tags$div("Random effects: not modeled"),
           tags$div(sprintf("Mean residual: %.3f", residual_mean))
@@ -391,7 +454,7 @@ server <- function(input, output, session) {
     sds <- estimated_sds(mod)
 
     tags$div(
-      class = "small mt-2",
+      class = "small mt-2 mb-2",
       tags$strong("Model check"),
       tags$div(if (converged) "✓ optimizer converged" else "⚠ convergence warning"),
       tags$div(
