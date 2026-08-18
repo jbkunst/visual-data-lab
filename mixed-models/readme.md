@@ -23,15 +23,23 @@ where the group deviations are centered at zero and the observation noise is nor
 
 Depending on the selected data structure, the random-intercept or random-slope variance can be exactly zero.
 
-For scenarios with intercept differences, groups are observed over partly different ranges of \\(x\\). Those ranges are generated independently of the random effects; they simply make the contrast between a pooled relationship and within-group relationships easier to see.
+For scenarios with intercept differences, groups are observed over partly different ranges of \\(x\\). Those ranges are generated independently of the random effects; they simply make the contrast between a global relationship and within-group relationships easier to see.
+
+### Group sizes
+
+**Balanced** gives every group the same number of observations.
+
+**Unbalanced** deliberately mixes very small and large groups. With six groups the sizes are approximately 4, 7, 12, 20, 35, and 60 observations. This is useful for seeing when estimating every group independently becomes unstable and when partial pooling can help the smaller groups borrow information from the population.
 
 ### Pooling
 
-**Complete pooling** ignores group differences and estimates one relationship for everyone.
+The selector uses descriptive model names while the text below it keeps the standard pooling terminology.
 
-**No pooling** estimates a separate relationship for each group using only that group's observations.
+**Global model** is complete pooling: it ignores group differences and estimates one relationship for everyone.
 
-**Partial pooling** is the mixed-model middle ground: groups have their own effects, but those effects are estimated together and share information.
+**Group-specific models** are no pooling: each group gets a separate relationship estimated only from that group's observations.
+
+**Random intercept**, **random slope**, and **random intercept + slope** are partial-pooling models: groups may differ, but their deviations are estimated jointly.
 
 ### Shrinkage
 
@@ -43,7 +51,11 @@ Groups with less information generally shrink more. Groups with more observation
 
 The same simulated dataset is split within every group into approximately 70% training observations and 30% test observations. Each candidate model is fitted on the training observations and evaluated on both sets.
 
-A low training RMSE only says that a model describes the observations it already saw well. The test RMSE asks whether that fitted relationship also predicts unseen observations from the **same groups**. This helps show why no pooling can fit small groups very closely yet produce less stable group-specific relationships than a partially pooled model.
+A low training RMSE only says that a model describes observations it already saw well. Test RMSE asks whether that fitted relationship predicts unseen observations from the **same groups**.
+
+With unbalanced groups, ordinary test RMSE gives more influence to large groups because they contribute more rows. The app therefore also reports **Equal-group test RMSE**: it computes test error within each group and then gives every group the same weight. This makes performance on small groups visible instead of letting the largest groups dominate the summary.
+
+Neither metric is expected to make a mixed model win every simulation. The point is to see **when** sharing information helps and when a group-specific model already has enough data to work well on its own.
 
 This is not yet a test on completely new groups. Predicting a group that was absent during fitting is a separate hierarchical-model question.
 
@@ -53,7 +65,7 @@ This is not yet a test on completely new groups. Predicting a group that was abs
 - **Residuals vs fitted:** remaining structure or changing residual spread, colored by group.
 - **Normal Q-Q:** whether residuals look compatible with a normal-error assumption, with group colors retained.
 - **Random effects:** estimated group deviations around zero.
-- **Shrinkage:** no-pooling estimates compared with estimates from the selected model.
-- **Train / test RMSE:** predictive performance of all candidate models on the same split.
+- **Shrinkage:** group-specific estimates compared with estimates from the selected model.
+- **Train / test RMSE:** predictive performance of all candidate models on the same split, including an equal-group test score.
 
 A singular mixed-model fit is informative here: it often means the fitted random-effect covariance has reached a boundary, commonly because one random-effect variance is estimated close to zero.
