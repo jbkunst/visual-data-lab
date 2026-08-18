@@ -20,6 +20,12 @@ card <- purrr::partial(
 primary_color <- unname(bs_get_variables(apptheme, "primary"))
 
 # helpers -----------------------------------------------------------------
+group_colors <- function(groups) {
+  palette <- hcl.colors(256, "viridis")
+  index <- round(seq(1 + 0.12 * 255, 1 + 0.88 * 255, length.out = length(groups)))
+  setNames(palette[index], groups)
+}
+
 simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   set.seed(seed)
 
@@ -56,6 +62,7 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
       } else {
         sort(runif(n_per_group, -2, 2))
       }
+
       epsilon <- rnorm(n_per_group, 0, sigma_e)
       y <- beta0 + b0[i] + (beta1 + b1[i]) * x + epsilon
 
@@ -136,6 +143,15 @@ no_pool_coefficients <- function(dat) {
   out
 }
 
+truth_coefficients <- function(sim) {
+  out <- cbind(
+    intercept = sim$truth$beta0 + sim$effects$b0,
+    slope = sim$truth$beta1 + sim$effects$b1
+  )
+  rownames(out) <- as.character(sim$effects$group)
+  out
+}
+
 current_group_coefficients <- function(dat, fit, model) {
   groups <- levels(dat$group)
 
@@ -189,6 +205,34 @@ estimated_sds <- function(fit) {
   out
 }
 
+coefficient_recovery <- function(sim, fit, model) {
+  truth <- truth_coefficients(sim)
+  no_pool <- no_pool_coefficients(sim$data)
+  selected <- current_group_coefficients(sim$data, fit, model)
+  groups <- rownames(truth)
+
+  list(
+    table = data.frame(
+      Group = groups,
+      `True int.` = truth[groups, "intercept"],
+      `No pool int.` = no_pool[groups, "intercept"],
+      `Model int.` = selected[groups, "intercept"],
+      `True slope` = truth[groups, "slope"],
+      `No pool slope` = no_pool[groups, "slope"],
+      `Model slope` = selected[groups, "slope"],
+      check.names = FALSE
+    ),
+    no_pool_rmse = c(
+      intercept = sqrt(mean((no_pool[, "intercept"] - truth[, "intercept"])^2)),
+      slope = sqrt(mean((no_pool[, "slope"] - truth[, "slope"])^2))
+    ),
+    selected_rmse = c(
+      intercept = sqrt(mean((selected[, "intercept"] - truth[, "intercept"])^2)),
+      slope = sqrt(mean((selected[, "slope"] - truth[, "slope"])^2))
+    )
+  )
+}
+
 model_labels <- c(
   pooled = "Complete pooling",
   separate = "No pooling",
@@ -239,10 +283,13 @@ ui <- page_fillable(
       .mixed-qq { grid-column: 3; grid-row: 2; }
       .mixed-random { grid-column: 1; grid-row: 3; }
       .mixed-shrinkage { grid-column: 2; grid-row: 3; }
-      .mixed-variance { grid-column: 3; grid-row: 3; }
+      .mixed-recovery { grid-column: 3; grid-row: 3; }
 
       .mixed-grid .card { min-width: 0; min-height: 0; }
       .mixed-grid .shiny-plot-output { height: 100% !important; min-height: 0; }
+      .recovery-wrap { overflow: auto; padding: 0.25rem 0.4rem; font-size: 0.72rem; }
+      .recovery-wrap table { white-space: nowrap; margin-bottom: 0; }
+      .recovery-summary { padding: 0.25rem 0.4rem 0; font-size: 0.72rem; }
 
       @media (max-width: 1100px) {
         .mixed-grid {
@@ -255,7 +302,7 @@ ui <- page_fillable(
         }
 
         .mixed-main { grid-column: 1 / -1; grid-row: auto; min-height: 65vh; }
-        .mixed-residuals, .mixed-qq, .mixed-random, .mixed-shrinkage, .mixed-variance {
+        .mixed-residuals, .mixed-qq, .mixed-random, .mixed-shrinkage, .mixed-recovery {
           grid-column: auto;
           grid-row: auto;
           min-height: 260px;
@@ -352,9 +399,10 @@ ui <- page_fillable(
         plotOutput("shrinkage_plot", width = "100%", height = "100%")
       ),
       card(
-        class = "mixed-variance",
-        card_header("Variance components"),
-        plotOutput("variance_plot", width = "100%", height = "100%")
+        class = "mixed-recovery",
+        card_header("Coefficient recovery"),
+        tags$div(class = "recovery-summary", uiOutput("recovery_summary")),
+        tags$div(class = "recovery-wrap", tableOutput("recovery_table"))
       )
     )
   )
@@ -379,6 +427,10 @@ server <- function(input, output, session) {
 
   fit <- reactive({
     fit_selected_model(sim()$data, input$model)
+  })
+
+  recovery <- reactive({
+    coefficient_recovery(sim(), fit(), input$model)
   })
 
   output$truth_formula <- renderUI({
@@ -510,12 +562,12 @@ server <- function(input, output, session) {
     truth <- truth_lines(simulation)
     fitted <- fitted_lines(dat, mod)
     groups <- levels(dat$group)
-    cols <- setNames(hcl.colors(length(groups), "Dark 3"), groups)
+    cols <- group_colors(groups)
 
     plot(
       dat$x,
       dat$y,
-      col = adjustcolor(cols[as.character(dat$group)], alpha.f = 0.65),
+      col = adjustcolor(cols[as.character(dat$group)], alpha.f = 0.7),
       pch = 16,
       xlab = "x",
       ylab = "y",
@@ -524,7 +576,7 @@ server <- function(input, output, session) {
 
     for (g in groups) {
       dtruth <- truth[truth$group == g, ]
-      lines(dtruth$x, dtruth$y, col = adjustcolor(cols[g], alpha.f = 0.45), lty = 2, lwd = 2)
+      lines(dtruth$x, dtruth$y, col = adjustcolor(cols[g], alpha.f = 0.5), lty = 2, lwd = 2)
     }
 
     if (input$model == "pooled") {
@@ -547,7 +599,10 @@ server <- function(input, output, session) {
   })
 
   output$residual_plot <- renderPlot({
+    dat <- sim()$data
     mod <- fit()
+    groups <- levels(dat$group)
+    cols <- group_colors(groups)
     x <- fitted(mod)
     y <- residuals(mod)
 
@@ -555,7 +610,7 @@ server <- function(input, output, session) {
       x,
       y,
       pch = 16,
-      col = adjustcolor(primary_color, alpha.f = 0.55),
+      col = adjustcolor(cols[as.character(dat$group)], alpha.f = 0.72),
       xlab = "Fitted",
       ylab = "Residual",
       main = ""
@@ -565,8 +620,22 @@ server <- function(input, output, session) {
   })
 
   output$qq_plot <- renderPlot({
+    dat <- sim()$data
     r <- residuals(fit())
-    qqnorm(r, pch = 16, col = adjustcolor(primary_color, alpha.f = 0.55), main = "")
+    groups <- levels(dat$group)
+    cols <- group_colors(groups)
+    order_r <- order(r)
+    qq <- qqnorm(r, plot.it = FALSE)
+
+    plot(
+      qq$x,
+      qq$y,
+      pch = 16,
+      col = adjustcolor(cols[as.character(dat$group)[order_r]], alpha.f = 0.72),
+      xlab = "Theoretical Quantiles",
+      ylab = "Sample Quantiles",
+      main = ""
+    )
     qqline(r, lwd = 2)
   })
 
@@ -582,6 +651,7 @@ server <- function(input, output, session) {
 
     re <- ranef(mod)$group
     groups <- rownames(re)
+    cols <- group_colors(groups)
     values <- as.matrix(re)
     xr <- range(c(0, values))
     pad <- max(diff(xr) * 0.08, 0.1)
@@ -600,7 +670,14 @@ server <- function(input, output, session) {
 
     pchs <- c(16, 1)
     for (j in seq_len(ncol(values))) {
-      points(values[, j], seq_along(groups), pch = pchs[j], cex = 1.15)
+      points(
+        values[, j],
+        seq_along(groups),
+        pch = pchs[j],
+        col = cols[groups],
+        cex = 1.15,
+        lwd = 1.5
+      )
     }
 
     legend(
@@ -617,6 +694,7 @@ server <- function(input, output, session) {
     dat <- sim()$data
     mod <- fit()
     groups <- levels(dat$group)
+    cols <- group_colors(groups)
     no_pool <- no_pool_coefficients(dat)
     current <- current_group_coefficients(dat, mod, input$model)
     population <- population_coefficients(dat, mod, input$model)
@@ -640,21 +718,34 @@ server <- function(input, output, session) {
       no_pool[, "slope"],
       current[, "intercept"],
       current[, "slope"],
-      col = "grey70"
+      col = adjustcolor(cols[groups], alpha.f = 0.55),
+      lwd = 1.5
     )
-    points(no_pool[, "intercept"], no_pool[, "slope"], pch = 1, cex = 1.1)
-    points(current[, "intercept"], current[, "slope"], pch = 16, cex = 1.1)
+    points(
+      no_pool[, "intercept"],
+      no_pool[, "slope"],
+      pch = 1,
+      col = cols[groups],
+      cex = 1.15,
+      lwd = 1.5
+    )
+    points(
+      current[, "intercept"],
+      current[, "slope"],
+      pch = 16,
+      col = cols[groups],
+      cex = 1.15
+    )
     points(population[1], population[2], pch = 8, cex = 1.5, lwd = 2)
 
-    if (input$model %in% c("ri", "rs", "ris")) {
-      text(
-        current[, "intercept"],
-        current[, "slope"],
-        labels = groups,
-        pos = 3,
-        cex = 0.7
-      )
-    }
+    text(
+      current[, "intercept"],
+      current[, "slope"],
+      labels = groups,
+      col = cols[groups],
+      pos = 3,
+      cex = 0.7
+    )
 
     legend(
       "topright",
@@ -665,50 +756,32 @@ server <- function(input, output, session) {
     )
   })
 
-  output$variance_plot <- renderPlot({
-    truth <- sim()$truth
-    mod <- fit()
+  output$recovery_summary <- renderUI({
+    x <- recovery()
 
-    true_sd <- c(
-      intercept = truth$sigma_b0,
-      slope = truth$sigma_b1,
-      residual = truth$sigma_e
-    )
-    estimated_sd <- estimated_sds(mod)
-
-    values <- c(true_sd, estimated_sd)
-    ymax <- max(values, na.rm = TRUE) * 1.2
-    if (!is.finite(ymax) || ymax == 0) ymax <- 1
-
-    plot(
-      c(0.7, 3.3),
-      c(0, ymax),
-      type = "n",
-      xaxt = "n",
-      xlab = "",
-      ylab = "Standard deviation",
-      main = ""
-    )
-    axis(1, at = 1:3, labels = c("Random intercept", "Random slope", "Residual"))
-
-    for (i in seq_along(true_sd)) {
-      if (!is.na(estimated_sd[i])) {
-        segments(i, true_sd[i], i, estimated_sd[i], col = "grey70")
-      }
-    }
-
-    points(1:3, true_sd, pch = 1, cex = 1.35, lwd = 2)
-    keep <- !is.na(estimated_sd)
-    points((1:3)[keep], estimated_sd[keep], pch = 16, cex = 1.15)
-
-    legend(
-      "topright",
-      legend = c("True", "Estimated"),
-      pch = c(1, 16),
-      bty = "n",
-      cex = 0.82
+    tags$div(
+      tags$div(
+        tags$strong("No pooling RMSE: "),
+        sprintf("intercept %.2f · slope %.2f", x$no_pool_rmse["intercept"], x$no_pool_rmse["slope"])
+      ),
+      tags$div(
+        tags$strong(paste0(model_labels[[input$model]], " RMSE: ")),
+        sprintf("intercept %.2f · slope %.2f", x$selected_rmse["intercept"], x$selected_rmse["slope"])
+      )
     )
   })
+
+  output$recovery_table <- renderTable(
+    {
+      recovery()$table
+    },
+    digits = 2,
+    striped = TRUE,
+    bordered = FALSE,
+    hover = TRUE,
+    spacing = "xs",
+    rownames = FALSE
+  )
 }
 
 shinyApp(ui, server)
