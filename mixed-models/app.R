@@ -201,7 +201,7 @@ ui <- page_fillable(
           "1. Data structure",
           "Changes the process that generates the points."
         ),
-        choices = structure_labels,
+        choices = setNames(names(structure_labels), structure_labels),
         selected = "both"
       ),
       radioButtons(
@@ -210,7 +210,7 @@ ui <- page_fillable(
           "2. Fitted model",
           "Keeps the data fixed and changes how group structure is modeled."
         ),
-        choices = model_labels,
+        choices = setNames(names(model_labels), model_labels),
         selected = "ri"
       ),
       sliderInput(
