@@ -207,8 +207,8 @@ ui <- page_fillable(
 
       .mixed-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(230px, 0.55fr);
-        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(170px, 0.55fr);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(230px, 1.33fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(170px, 1.33fr);
         gap: 0.75rem;
         width: 100%;
         height: calc(100vh - 1.5rem);
