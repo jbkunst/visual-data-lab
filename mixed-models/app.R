@@ -210,9 +210,9 @@ ui <- page_fillable(
         grid-template-columns: repeat(3, minmax(0, 1fr));
         grid-template-rows: repeat(3, minmax(0, 1fr));
         gap: 0.75rem;
-        width: min(100%, calc(100vh - 1.5rem));
-        aspect-ratio: 1 / 1;
-        margin-inline: auto;
+        width: 100%;
+        height: calc(100vh - 1.5rem);
+        min-height: 720px;
       }
 
       .mixed-main { grid-column: 1 / span 2; grid-row: 1 / span 2; }
@@ -231,8 +231,8 @@ ui <- page_fillable(
           grid-template-columns: 1fr 1fr;
           grid-template-rows: auto;
           width: 100%;
-          aspect-ratio: auto;
-          margin-inline: 0;
+          height: auto;
+          min-height: 0;
         }
 
         .mixed-main { grid-column: 1 / -1; grid-row: auto; min-height: 65vh; }
