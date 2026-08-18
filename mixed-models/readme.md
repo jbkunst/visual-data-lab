@@ -39,11 +39,13 @@ Groups with less information generally shrink more. Groups with more observation
 
 ### What to inspect
 
+Group colors are kept consistent across the main view, residual diagnostics, random effects, and shrinkage plot so the same group can be followed through the model.
+
 - **Main view:** simulated truth and fitted group relationships.
-- **Residuals vs fitted:** remaining structure or changing residual spread.
-- **Normal Q-Q:** whether residuals look compatible with a normal-error assumption.
+- **Residuals vs fitted:** remaining structure or changing residual spread, colored by group.
+- **Normal Q-Q:** whether residuals look compatible with a normal-error assumption and whether departures concentrate in particular groups.
 - **Random effects:** estimated group deviations around zero.
 - **Shrinkage:** no-pooling estimates compared with the estimates from the selected model.
-- **Variance components:** true simulation standard deviations compared with those estimated by the fitted mixed model.
+- **Coefficient recovery:** true simulated intercepts and slopes compared with no-pooling and selected-model estimates. RMSE summarizes how closely each approach recovers the truth.
 
 A singular mixed-model fit is informative here: it often means the fitted random-effect covariance has reached a boundary, commonly because one random-effect variance is estimated close to zero.
