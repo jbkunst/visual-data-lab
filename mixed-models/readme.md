@@ -7,17 +7,17 @@ This experiment separates two ideas that are easy to mix up:
 
 The simulated relationship is
 
-\[
-y_{ij} = \beta_0 + b_{0j} + (\beta_1 + b_{1j})x_{ij} + \varepsilon_{ij},
-\]
+\\[
+y_{ij} = \\beta_0 + b_{0j} + (\\beta_1 + b_{1j})x_{ij} + \\varepsilon_{ij},
+\\]
 
 where the group deviations are centered at zero and the observation noise is normal:
 
-\[
-\begin{pmatrix}b_{0j}\\b_{1j}\end{pmatrix} \sim N(0, \Sigma),
-\qquad
-\varepsilon_{ij} \sim N(0, \sigma^2).
-\]
+\\[
+\\begin{pmatrix}b_{0j}\\\\b_{1j}\\end{pmatrix} \\sim N(0, \\Sigma),
+\\qquad
+\\varepsilon_{ij} \\sim N(0, \\sigma^2).
+\\]
 
 Depending on the selected data structure, the random-intercept or random-slope variance can be exactly zero.
 
