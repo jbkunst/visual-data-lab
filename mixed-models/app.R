@@ -36,6 +36,12 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   b0 <- sigma_b0 * z0
   b1 <- sigma_b1 * (rho * z0 + sqrt(1 - rho^2) * z1)
 
+  x_centers <- if (structure %in% c("intercept", "both")) {
+    seq(-1.4, 1.4, length.out = n_groups)
+  } else {
+    rep(0, n_groups)
+  }
+
   effects <- data.frame(
     group = factor(groups, levels = groups),
     b0 = b0,
@@ -45,7 +51,11 @@ simulate_grouped_data <- function(structure, n_groups, n_per_group, seed) {
   dat <- do.call(
     rbind,
     lapply(seq_len(n_groups), function(i) {
-      x <- sort(runif(n_per_group, -2, 2))
+      x <- if (structure %in% c("intercept", "both")) {
+        sort(x_centers[i] + runif(n_per_group, -0.85, 0.85))
+      } else {
+        sort(runif(n_per_group, -2, 2))
+      }
       epsilon <- rnorm(n_per_group, 0, sigma_e)
       y <- beta0 + b0[i] + (beta1 + b1[i]) * x + epsilon
 
@@ -84,12 +94,13 @@ fit_selected_model <- function(dat, model) {
 
 truth_lines <- function(sim) {
   groups <- levels(sim$data$group)
-  x_grid <- seq(-2.1, 2.1, length.out = 100)
 
   do.call(
     rbind,
     lapply(groups, function(g) {
       effect <- sim$effects[sim$effects$group == g, ]
+      observed <- sim$data[sim$data$group == g, ]
+      x_grid <- seq(min(observed$x), max(observed$x), length.out = 100)
 
       data.frame(
         group = factor(g, levels = groups),
@@ -103,11 +114,19 @@ truth_lines <- function(sim) {
 
 fitted_lines <- function(dat, fit) {
   groups <- levels(dat$group)
-  x_grid <- seq(-2.1, 2.1, length.out = 100)
-  grid <- expand.grid(x = x_grid, group = groups)
-  grid$group <- factor(grid$group, levels = groups)
-  grid$y <- predict(fit, newdata = grid)
-  grid
+
+  do.call(
+    rbind,
+    lapply(groups, function(g) {
+      observed <- dat[dat$group == g, ]
+      grid <- data.frame(
+        x = seq(min(observed$x), max(observed$x), length.out = 100),
+        group = factor(g, levels = groups)
+      )
+      grid$y <- predict(fit, newdata = grid)
+      grid
+    })
+  )
 }
 
 no_pool_coefficients <- function(dat) {
