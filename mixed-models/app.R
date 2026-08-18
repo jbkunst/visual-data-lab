@@ -207,12 +207,12 @@ ui <- page_fillable(
 
       .mixed-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(230px, 1.33fr);
-        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(170px, 1.33fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(0, 1fr));
         gap: 0.75rem;
-        width: 100%;
-        height: calc(100vh - 1.5rem);
-        min-height: 760px;
+        width: min(100%, calc(100vh - 1.5rem));
+        aspect-ratio: 1 / 1;
+        margin-inline: auto;
       }
 
       .mixed-main { grid-column: 1 / span 2; grid-row: 1 / span 2; }
@@ -230,8 +230,9 @@ ui <- page_fillable(
           display: grid;
           grid-template-columns: 1fr 1fr;
           grid-template-rows: auto;
-          height: auto;
-          min-height: 0;
+          width: 100%;
+          aspect-ratio: auto;
+          margin-inline: 0;
         }
 
         .mixed-main { grid-column: 1 / -1; grid-row: auto; min-height: 65vh; }
