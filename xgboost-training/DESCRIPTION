@@ -1,0 +1,5 @@
+Title: XGBoost Training
+Description: Change XGBoost parameters and watch a credit-risk model learn, converge, and begin to overfit tree by tree.
+Categories: machine learning, credit risk, optimization
+Runtime: server
+Status: draft
