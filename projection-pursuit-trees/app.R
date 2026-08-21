@@ -185,17 +185,39 @@ draw_surface <- function(data, grid, prediction) {
   box(col = "#ced4da")
 }
 
+macro_f1 <- function(truth, prediction, classes) {
+  mean(vapply(classes, function(class) {
+    true_positive <- sum(truth == class & prediction == class)
+    precision <- true_positive / max(1, sum(prediction == class))
+    recall <- true_positive / max(1, sum(truth == class))
+    if (precision + recall == 0) 0 else 2 * precision * recall / (precision + recall)
+  }, numeric(1)))
+}
+
 draw_comparison <- function(scores, fit_time, predict_time, predictions, labels, classes) {
   score <- do.call(rbind, scores)
   old <- par(mfrow = c(2, 2), mar = c(6, 5, 2.5, 0.8), cex = 0.85)
   on.exit(par(old))
 
-  barplot(
-    t(score[, c("train", "test")]), beside = TRUE, names.arg = labels,
-    col = c("#7E57C2", "#009E73"), las = 2, ylim = c(0, 1),
-    ylab = "Accuracy", main = "Train vs test"
+  colors <- hcl.colors(length(labels), "Dark 3")
+  xlim <- pmax(0, pmin(1, extendrange(score[, c("train", "test")], f = 0.12)))
+  ylim <- pmax(0, pmin(1, extendrange(score[, c("train_f1", "test_f1")], f = 0.12)))
+  plot(
+    score[, "train"], score[, "train_f1"], type = "n", xlim = xlim, ylim = ylim,
+    xlab = "Accuracy", ylab = "Macro-F1", main = "Train → test performance"
   )
-  legend("bottomleft", c("Train", "Test"), fill = c("#7E57C2", "#009E73"), bty = "n")
+  abline(0, 1, col = "#ced4da", lty = 3)
+  segments(score[, "train"], score[, "train_f1"], score[, "test"], score[, "test_f1"], col = colors)
+  points(score[, "train"], score[, "train_f1"], pch = 16, col = colors, cex = 1.2)
+  points(score[, "test"], score[, "test_f1"], pch = 16, col = adjustcolor(colors, 0.35), cex = 1.2)
+  text(
+    score[, "test"], score[, "test_f1"], labels,
+    pos = ifelse(score[, "test"] > mean(xlim), 2, 4), col = colors, cex = 0.65
+  )
+  legend(
+    "bottomleft", c("Train", "Test"), pch = 16,
+    col = c("#343a40", adjustcolor("#343a40", 0.35)), bty = "n"
+  )
 
   barplot(
     1000 * rbind(fit = fit_time, predict = predict_time),
@@ -316,20 +338,25 @@ server <- function(input, output, session) {
 
   scores <- reactive({
     d <- data()
+    truth <- as.character(d$class)
+    train <- d$partition == "train"
+    test <- d$partition == "test"
     predictions <- Map(
       function(model, fit) as.character(model$predict(fit$model, d)),
       models, fits()
     )
     classes <- levels(d$class)
     lapply(predictions, function(prediction) {
-      correct <- prediction == as.character(d$class)
+      correct <- prediction == truth
       recall <- vapply(classes, function(class) {
-        test_class <- d$partition == "test" & d$class == class
+        test_class <- test & truth == class
         mean(correct[test_class])
       }, numeric(1))
       c(
-        train = mean(correct[d$partition == "train"]),
-        test = mean(correct[d$partition == "test"]),
+        train = mean(correct[train]),
+        test = mean(correct[test]),
+        train_f1 = macro_f1(truth[train], prediction[train], classes),
+        test_f1 = macro_f1(truth[test], prediction[test], classes),
         setNames(recall, paste0("recall_", classes))
       )
     })

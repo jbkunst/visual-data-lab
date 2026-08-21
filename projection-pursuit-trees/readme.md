@@ -16,7 +16,7 @@ The colored background is the **predicted class**, not a continuous probability 
 
 Every card reports accuracy on the 70% training partition and the 30% test partition. These values describe the current sample; they are not a repeated performance benchmark.
 
-**Compare results** opens a 2×2 summary: train versus test accuracy, fitting versus shared-grid prediction time, test recall for each class, and pairwise agreement on the prediction grid. Timing describes this browser session and should not be treated as a formal benchmark.
+**Compare results** opens a 2×2 summary. The first panel crosses accuracy with macro-F1 and connects each model's train and test points, making the generalization gap visible. The other panels compare fitting versus shared-grid prediction time, test recall for each class, and pairwise agreement on the prediction grid. Timing describes this browser session and should not be treated as a formal benchmark.
 
 ## Datasets
 
