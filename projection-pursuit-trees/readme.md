@@ -1,36 +1,31 @@
-`rpart` makes one-variable-at-a-time cuts, so its regions are rectangular. A projection pursuit (PP) tree searches for a linear combination, such as `0.7 x1 - 0.4 x2`, and cuts that projection. Its boundaries can therefore be oblique.
+The app fits six classifiers to the same three-class, two-dimensional data and predicts every point on one shared grid.
 
-The original PPtree has a rigid multiclass structure: with `G` classes it uses at most `G - 1` splits and assigns each class to one terminal node. PPtreeExt relaxes that structure, so a class may occupy several leaves. The **Two islands** example makes this difference visible because class A appears in two disconnected regions.
+The colored background is the **predicted class**, not a continuous probability surface. Each observed point uses the color of its true class, so a point on a differently colored region is a visible classification error.
 
-Use **Successive cuts** to reveal the fitted PPtree or PPtreeExt boundaries in construction order. `rpart` exposes maximum depth directly. The original PPtree does not: its depth follows its class-separation structure. For PPtreeExt, lower entropy tolerance allows additional splits and higher tolerance stops earlier.
+## Models
 
-The colored field is a dense grid of model predictions. Filled points are training observations and outlined points are test observations. Train/test accuracy and elapsed fit time are descriptive for the current sample, not a repeated benchmark.
+- **rpart:** one tree with axis-aligned, rectangular regions.
+- **PPtree:** one compact tree whose splits may use linear combinations of `x1` and `x2`.
+- **PPtreeExt:** a more flexible projection pursuit tree that allows additional oblique regions.
+- **Random forest:** an ensemble of axis-aligned trees.
+- **PPforest:** an ensemble of projection pursuit trees.
+- **KNN:** a local classifier whose regions follow nearby observations.
 
-For this compact first version, each successive split is drawn as its complete line. In the fitted tree, only the part of that line inside its active parent node performs a split.
+Every card reports accuracy on the 70% training partition and the 30% test partition. These values describe the current sample; they are not a repeated performance benchmark.
 
-The robot example is `data41-1` in the benchmark table from the paper: the two-sensor version of the UCI Wall-Following Robot Navigation dataset. It is the only one of the 94 benchmark datasets with exactly two predictors, so it can be displayed directly without projection or variable selection.
+## Datasets
 
-## Relationship to the authors' app
+**Diagonal bands** favors models that can separate classes using linear combinations. **Two islands** places one class in disconnected regions, exposing the rigidity of compact trees. **Iris petals** provides a familiar real three-class example.
 
-This app is an independent, didactic companion to the authors' [`explorapp`](https://natyds.shinyapps.io/explorapp/), not a reproduction or replacement. Their application compares `rpart`, PPtree, and PPtreeExt using three families of simulated 2D problems:
+## Relationship to earlier work
 
-- **Basic-Sim:** three bivariate normal clusters with adjustable means, correlations, and class sizes.
-- **Sim-Outlier:** the same simulation plus an outlier cluster assigned to one class.
-- **MixSim:** Gaussian mixtures with an adjustable number of classes, sample size, and average and maximum overlap.
+This app develops the prediction-grid idea used in Joshua Kunst's [`klassets`](https://github.com/jbkunst/klassets) from binary probability surfaces into a consistent comparison of multiclass decision regions.
 
-The original app was built to develop and diagnose both extensions: class subsetting and multiple splits. This version focuses on the multiple-splits extension and keeps the same central idea—evaluating each fitted model on a dense prediction grid—but reorganizes it as a more guided and visually polished learning experience. It adds curated examples, the paper's only real 2D benchmark, a common 2×2 comparison, train/test and structural metrics, and a step-by-step reveal of the fitted PP cuts.
+It is also a didactic companion to da Silva, Cook, and Lee's work on PPtreeExt. Their application compares `rpart`, PPtree, and PPtreeExt while developing and diagnosing two algorithmic extensions. This app keeps the 2D visual comparison but expands it to single trees, forests, and a local classifier.
 
-## References and credits
+## References
 
 - Natalia da Silva, Dianne Cook, and Eun-Kyung Lee (2026), [*An Enhanced Projection Pursuit Tree Classifier with Visual Methods for Assessing Algorithmic Improvements*](https://doi.org/10.1080/10618600.2026.2719812). [arXiv version](https://arxiv.org/abs/2602.21130).
+- Natalia da Silva, Dianne Cook, and Eun-Kyung Lee (2021), [*A Projection Pursuit Forest Algorithm for Supervised Classification*](https://doi.org/10.1080/10618600.2020.1814300).
 - Y. D. Lee, Dianne Cook, J. W. Park, and E.-K. Lee (2013), [*PPtree: Projection Pursuit Classification Tree*](https://doi.org/10.1214/13-EJS810).
-- Original interactive application: [`explorapp`](https://natyds.shinyapps.io/explorapp/) and its [`PPtreeExt::explorapp()` source code](https://github.com/natydasilva/PPtreeExt/blob/master/R/explorapp.R).
-- Implementations: [`PPtreeViz`](https://cran.r-project.org/package=PPtreeViz) and [`PPtreeExt`](https://github.com/natydasilva/PPtreeExt). The prediction-grid idea is related to [`parttree`](https://grantmcdermott.com/parttree/), but the PP boundaries here come directly from each fitted tree.
-- [UCI Wall-Following Robot Navigation dataset](https://archive.ics.uci.edu/dataset/194/wall%2Bfollowing%2Brobot%2Bnavigation%2Bdata), DOI [10.24432/C57C8W](https://doi.org/10.24432/C57C8W), licensed CC BY 4.0.
-
-Install PPtreeExt from R-universe if needed, then run the app:
-
-```r
-install.packages("PPtreeExt", repos = c("https://natydasilva.r-universe.dev", "https://cloud.r-project.org"))
-shiny::runApp("projection-pursuit-trees")
-```
+- Implementations: [`PPtreeViz`](https://cran.r-project.org/package=PPtreeViz), [`PPtreeExt`](https://cran.r-project.org/package=PPtreeExt), and [`PPforest`](https://cran.r-project.org/package=PPforest).

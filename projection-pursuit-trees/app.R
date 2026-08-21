@@ -1,12 +1,11 @@
 # packages ----------------------------------------------------------------
 library(shiny)
 library(bslib)
-library(rpart)
 library(vdltheme)
 
-# theme and data -----------------------------------------------------------
+# theme -------------------------------------------------------------------
 apptheme <- theme_vdl()
-sidebar <- purrr::partial(bslib::sidebar, width = 300)
+sidebar <- purrr::partial(bslib::sidebar, width = 290)
 card <- purrr::partial(
   bslib::card,
   full_screen = TRUE,
@@ -14,20 +13,7 @@ card <- purrr::partial(
 )
 thematic::thematic_shiny(font = "auto")
 
-app_dir <- if (file.exists("sensor_readings_2.data")) "." else "projection-pursuit-trees"
-robot <- read.csv(
-  file.path(app_dir, "sensor_readings_2.data"),
-  header = FALSE,
-  col.names = c("x1", "x2", "class")
-)
-robot$class <- factor(c(
-  "Move-Forward" = "Forward",
-  "Sharp-Right-Turn" = "Sharp right",
-  "Slight-Left-Turn" = "Slight left",
-  "Slight-Right-Turn" = "Slight right"
-)[robot$class])
-
-# helpers -----------------------------------------------------------------
+# data --------------------------------------------------------------------
 make_data <- function(scenario, n, seed) {
   set.seed(seed)
 
@@ -47,9 +33,13 @@ make_data <- function(scenario, n, seed) {
       class <- ifelse(abs(x1) > 1.3, "A", ifelse(x2 > 0, "B", "C"))
       flip <- sample.int(n, ceiling(0.05 * n))
       class[flip] <- sample(c("A", "B", "C"), length(flip), replace = TRUE)
-      data.frame(x1, x2, class = factor(class))
+      data.frame(x1, x2, class = factor(class, levels = c("A", "B", "C")))
     },
-    robot[sample.int(nrow(robot), min(n, nrow(robot))), ]
+    iris = data.frame(
+      x1 = iris$Petal.Length,
+      x2 = iris$Petal.Width,
+      class = iris$Species
+    )
   )
 
   train <- unlist(lapply(
@@ -61,105 +51,135 @@ make_data <- function(scenario, n, seed) {
   data
 }
 
-timed_fit <- function(code) {
-  start <- proc.time()[[3]]
-  model <- force(code)
-  list(model = model, seconds = proc.time()[[3]] - start)
-}
+# model helpers ------------------------------------------------------------
+fit_knn <- function(data, k = 15) {
+  x <- as.matrix(data[c("x1", "x2")])
+  center <- colMeans(x)
+  spread <- apply(x, 2, sd)
+  spread[!is.finite(spread) | spread == 0] <- 1
+  k <- min(k, nrow(data) - 1L)
+  if (k %% 2 == 0) k <- k - 1L
 
-predict_class <- function(fit, method, newdata) {
-  switch(
-    method,
-    rpart = as.character(predict(fit, newdata, type = "class")),
-    pptree = as.character(predict(fit, newdata, Rule = 1)),
-    ext = as.character(predict(fit, newdata)$predict.class)
+  list(
+    train = sweep(sweep(x, 2, center), 2, spread, "/"),
+    class = data$class,
+    center = center,
+    spread = spread,
+    k = k
   )
 }
 
-pp_depths <- function(tree) {
-  depths <- rep(NA_integer_, nrow(tree))
-  visit <- function(id, depth) {
-    row <- match(id, tree[, 1])
-    depths[[row]] <<- depth
-    if (tree[row, 4] != 0) {
-      visit(tree[row, 2], depth + 1L)
-      visit(tree[row, 3], depth + 1L)
-    }
-  }
-  visit(1, 0L)
-  depths
+predict_knn <- function(model, newdata) {
+  test <- as.matrix(newdata[c("x1", "x2")])
+  test <- sweep(sweep(test, 2, model$center), 2, model$spread, "/")
+  class::knn(model$train, test, model$class, k = model$k)
 }
 
-pp_cuts <- function(fit, method) {
-  tree <- fit$Tree.Struct
-  rows <- which(tree[, 4] != 0)
-  coef_id <- tree[rows, 4]
-  cutoff <- if (method == "pptree") {
-    fit$splitCutoff.node[coef_id, 1]
-  } else {
-    as.numeric(fit$splitCutoff.node)[coef_id]
-  }
-  cuts <- data.frame(
-    step = coef_id,
-    node = tree[rows, 1],
-    depth = pp_depths(tree)[rows],
-    a = fit$projbest.node[coef_id, 1],
-    b = fit$projbest.node[coef_id, 2],
-    cutoff = cutoff
+models <- list(
+  rpart = list(
+    label = "rpart", subtitle = "rectangular tree",
+    fit = \(d) rpart::rpart(
+      class ~ x1 + x2, d, method = "class",
+      control = rpart::rpart.control(cp = 0, maxdepth = 5, minsplit = 12)
+    ),
+    predict = \(m, d) predict(m, d, type = "class")
+  ),
+  pptree = list(
+    label = "PPtree", subtitle = "oblique tree",
+    fit = \(d) PPtreeViz::PPTreeclass(class ~ x1 + x2, d, PPmethod = "LDA"),
+    predict = \(m, d) predict(m, d, Rule = 1)
+  ),
+  pptree_ext = list(
+    label = "PPtreeExt", subtitle = "flexible oblique tree",
+    fit = \(d) PPtreeExt::PPtreeExtclass(
+      class ~ x1 + x2, d, PPmethod = "LDA",
+      srule = TRUE, tot = nrow(d), tol = 0.2
+    ),
+    predict = \(m, d) predict(m, d)$predict.class
+  ),
+  random_forest = list(
+    label = "Random forest", subtitle = "rectangular forest",
+    fit = \(d) randomForest::randomForest(
+      class ~ x1 + x2, d, ntree = 100, mtry = 2
+    ),
+    predict = \(m, d) predict(m, d)
+  ),
+  ppforest = list(
+    label = "PPforest", subtitle = "oblique forest",
+    fit = \(d) PPforest::PPforest(
+      d, y = "class", std = "scale", size.tr = 1,
+      m = 100, PPmethod = "LDA", size.p = 1, parallel = FALSE
+    ),
+    predict = \(m, d) predict(m, d, parallel = FALSE)[[3]]
+  ),
+  knn = list(
+    label = "KNN", subtitle = "local neighbourhoods",
+    fit = fit_knn,
+    predict = predict_knn
   )
-  cuts[order(cuts$step), ]
-}
+)
 
-decision_grid <- function(data, length = 90) {
+# plot helpers -------------------------------------------------------------
+decision_grid <- function(data, length = 80) {
   x_range <- range(data$x1)
   y_range <- range(data$x2)
   x_pad <- max(diff(x_range) * 0.06, 0.05)
   y_pad <- max(diff(y_range) * 0.06, 0.05)
+
   expand.grid(
     x1 = seq(x_range[1] - x_pad, x_range[2] + x_pad, length.out = length),
     x2 = seq(y_range[1] - y_pad, y_range[2] + y_pad, length.out = length)
   )
 }
 
-draw_cut <- function(cut, color, width = 1) {
-  if (abs(cut$b) > 1e-9) {
-    abline(a = cut$cutoff / cut$b, b = -cut$a / cut$b, col = color, lwd = width)
-  } else {
-    abline(v = cut$cutoff / cut$a, col = color, lwd = width)
-  }
+class_colors <- function(data) {
+  colors <- c("#7E57C2", "#009E73", "#E69F00")
+  setNames(colors[seq_len(nlevels(data$class))], levels(data$class))
 }
 
-draw_surface <- function(data, grid, prediction, title, cuts = NULL, step = Inf) {
-  classes <- levels(data$class)
-  palette <- setNames(grDevices::hcl.colors(length(classes), "Dark 3"), classes)
+draw_surface <- function(data, grid, prediction) {
+  colors <- class_colors(data)
+  classes <- names(colors)
   xs <- sort(unique(grid$x1))
   ys <- sort(unique(grid$x2))
-  z <- matrix(match(prediction, classes), nrow = length(xs))
+  z <- matrix(match(as.character(prediction), classes), nrow = length(xs))
 
+  par(mar = c(3.3, 3.3, 0.5, 0.5))
   image(
     xs, ys, z,
-    col = grDevices::adjustcolor(palette, alpha.f = 0.18),
+    col = grDevices::adjustcolor(colors, alpha.f = 0.22),
     breaks = seq(0.5, length(classes) + 0.5),
-    xlab = "x1", ylab = "x2", main = title, asp = 1
+    xlab = "x1", ylab = "x2", asp = 1, useRaster = TRUE
   )
-
-  if (!is.null(cuts)) {
-    visible <- cuts[cuts$step <= step, , drop = FALSE]
-    if (nrow(visible)) {
-      for (i in seq_len(nrow(visible))) draw_cut(visible[i, ], "#6c757d", 1)
-      draw_cut(visible[nrow(visible), ], "#111315", 2.5)
-    }
-  }
-
-  train <- data$partition == "train"
-  points(data$x1[train], data$x2[train], pch = 21, cex = 0.75,
-    bg = palette[as.character(data$class[train])], col = "white")
-  points(data$x1[!train], data$x2[!train], pch = 1, cex = 0.85,
-    col = palette[as.character(data$class[!train])], lwd = 1.3)
-  legend("topright", legend = classes, pch = 21, pt.bg = palette,
-    col = "white", bty = "n", cex = 0.75)
+  points(
+    data$x1, data$x2,
+    pch = 16, cex = 0.68,
+    col = colors[as.character(data$class)]
+  )
   box(col = "#ced4da")
 }
+
+model_card <- function(id, model) {
+  card(
+    card_header(
+      div(
+        class = "d-flex justify-content-between align-items-center gap-2 w-100",
+        div(
+          model$label,
+          tags$small(class = "d-block fw-normal text-muted", model$subtitle)
+        ),
+        uiOutput(paste0(id, "_metrics"), inline = TRUE)
+      )
+    ),
+    plotOutput(paste0(id, "_plot"), height = "100%")
+  )
+}
+
+cards <- Map(model_card, names(models), models)
+model_grid <- do.call(
+  layout_columns,
+  c(cards, list(col_widths = 4, gap = "0.75rem"))
+)
 
 # ui ----------------------------------------------------------------------
 ui <- page_fillable(
@@ -169,31 +189,22 @@ ui <- page_fillable(
     fillable = TRUE,
     padding = "0.75rem",
     sidebar = sidebar(
-      title = "Projection Pursuit Trees",
+      title = "Multiclass regions",
       selectInput(
         "scenario", tags$small("Dataset"),
-        c("Two islands" = "islands", "Diagonal bands" = "diagonal",
-          "Robot navigation · UCI" = "robot")
+        c(
+          "Two islands" = "islands",
+          "Diagonal bands" = "diagonal",
+          "Iris petals" = "iris"
+        )
       ),
-      sliderInput("n", tags$small("Observations"), 150, 900, 450, step = 50),
+      conditionalPanel(
+        "input.scenario != 'iris'",
+        sliderInput("n", tags$small("Observations"), 150, 600, 300, step = 50)
+      ),
       actionButton("resample", "New sample", class = "btn-primary w-100"),
-      sliderInput("depth", tags$small("rpart · maximum depth"), 1, 8, 4),
-      sliderInput(
-        "tol", input_label_vdl(
-          "PPtreeExt · entropy tolerance",
-          "Lower values allow more splits; higher values stop earlier."
-        ),
-        0.05, 0.8, 0.2, step = 0.05
-      ),
-      selectInput(
-        "focus", tags$small("Reveal cuts for"),
-        c("PPtree" = "pptree", "PPtreeExt" = "ext")
-      ),
-      sliderInput(
-        "step", tags$small("Successive cuts"), 0, 1, 1,
-        animate = animationOptions(interval = 900, loop = FALSE)
-      ),
-      tags$small(textOutput("cut_note")),
+      uiOutput("class_legend"),
+      tags$small("The background is the predicted class, not a probability surface."),
       accordion(
         open = FALSE,
         accordion_panel(
@@ -203,20 +214,7 @@ ui <- page_fillable(
       ),
       tags$small(htmltools::includeMarkdown("credits.md"))
     ),
-    layout_columns(
-      col_widths = c(6, 6, 6, 6),
-      gap = "0.75rem",
-      card(card_header("rpart · rectangular"), plotOutput("rpart_plot", height = "100%")),
-      card(card_header("PPtree · oblique"), plotOutput("pptree_plot", height = "100%")),
-      card(card_header("PPtreeExt · multiple oblique regions"), plotOutput("ext_plot", height = "100%")),
-      card(
-        card_header("Performance"),
-        card_body(
-          tableOutput("metrics"),
-          tags$small("Filled points are train; outlined points are test. Timing is one fit, not a benchmark.")
-        )
-      )
-    )
+    model_grid
   )
 )
 
@@ -229,89 +227,62 @@ server <- function(input, output, session) {
 
   fits <- reactive({
     train <- data()[data()$partition == "train", c("x1", "x2", "class")]
-    list(
-      rpart = timed_fit(rpart(
-        class ~ x1 + x2, train, method = "class",
-        control = rpart.control(cp = 0, maxdepth = input$depth, minsplit = 12)
-      )),
-      pptree = timed_fit(PPtreeViz::PPTreeclass(class ~ x1 + x2, train, PPmethod = "LDA")),
-      ext = timed_fit(PPtreeExt::PPtreeExtclass(
-        class ~ x1 + x2, train, PPmethod = "LDA",
-        srule = TRUE, tot = nrow(train), tol = input$tol
-      ))
-    )
-  })
-
-  cuts <- reactive(lapply(c("pptree", "ext"), function(x) {
-    pp_cuts(fits()[[x]]$model, x)
-  }) |> setNames(c("pptree", "ext")))
-
-  observeEvent(list(fits(), input$focus), {
-    total <- nrow(cuts()[[input$focus]])
-    updateSliderInput(session, "step", max = max(1, total), value = total)
+    lapply(models, function(model) model$fit(train))
   })
 
   surfaces <- reactive({
     grid <- decision_grid(data())
-    predictions <- lapply(names(fits()), function(method) {
-      predict_class(fits()[[method]]$model, method, grid)
-    }) |> setNames(names(fits()))
+    predictions <- Map(
+      function(model, fit) as.character(model$predict(fit, grid)),
+      models, fits()
+    )
     list(grid = grid, predictions = predictions)
   })
 
-  plot_method <- function(method, label) {
-    surface <- surfaces()
-    model_cuts <- if (method == "rpart") NULL else cuts()[[method]]
-    shown <- if (identical(method, input$focus)) input$step else Inf
-    draw_surface(
-      data(), surface$grid, surface$predictions[[method]], label,
-      model_cuts, shown
+  scores <- reactive({
+    d <- data()
+    predictions <- Map(
+      function(model, fit) as.character(model$predict(fit, d)),
+      models, fits()
     )
-  }
 
-  output$rpart_plot <- renderPlot(plot_method("rpart", "Axis-aligned cuts"), res = 110)
-  output$pptree_plot <- renderPlot(plot_method("pptree", "At most G - 1 cuts"), res = 110)
-  output$ext_plot <- renderPlot(plot_method("ext", "A class may occupy several leaves"), res = 110)
+    lapply(predictions, function(prediction) {
+      correct <- prediction == as.character(d$class)
+      c(
+        train = mean(correct[d$partition == "train"]),
+        test = mean(correct[d$partition == "test"])
+      )
+    })
+  })
 
-  output$cut_note <- renderText({
-    selected <- cuts()[[input$focus]]
-    if (!nrow(selected) || input$step == 0) return("Start before the first split.")
-    cut <- selected[min(input$step, nrow(selected)), ]
-    sprintf(
-      "Cut %d · depth %d: %.2f x1 %+.2f x2 = %.2f",
-      cut$step, cut$depth, cut$a, cut$b, cut$cutoff
+  output$class_legend <- renderUI({
+    colors <- class_colors(data())
+    div(
+      class = "d-flex flex-wrap gap-3",
+      Map(function(label, color) {
+        tags$span(
+          class = "text-nowrap",
+          tags$span(style = paste0("color:", color), "\u25CF"),
+          label
+        )
+      }, names(colors), colors)
     )
   })
 
-  output$metrics <- renderTable({
-    d <- data()
-    methods <- names(fits())
-    labels <- c(rpart = "rpart", pptree = "PPtree", ext = "PPtreeExt")
-    score <- function(method, partition) {
-      rows <- d$partition == partition
-      newdata <- d[rows, c("x1", "x2")]
-      mean(predict_class(fits()[[method]]$model, method, newdata) == d$class[rows])
-    }
-    depths <- c(
-      rpart = max(floor(log2(as.integer(row.names(fits()$rpart$model$frame))))),
-      pptree = max(pp_depths(fits()$pptree$model$Tree.Struct)),
-      ext = max(pp_depths(fits()$ext$model$Tree.Struct))
-    )
-    splits <- c(
-      rpart = sum(fits()$rpart$model$frame$var != "<leaf>"),
-      pptree = nrow(cuts()$pptree),
-      ext = nrow(cuts()$ext)
-    )
-    data.frame(
-      Model = labels[methods],
-      Train = vapply(methods, score, numeric(1), "train"),
-      Test = vapply(methods, score, numeric(1), "test"),
-      Seconds = vapply(fits(), `[[`, numeric(1), "seconds"),
-      Splits = splits[methods],
-      Depth = depths[methods],
-      check.names = FALSE
-    )
-  }, digits = 3, striped = TRUE, bordered = FALSE, spacing = "s")
+  invisible(lapply(names(models), function(id) {
+    output[[paste0(id, "_plot")]] <- renderPlot({
+      surface <- surfaces()
+      draw_surface(data(), surface$grid, surface$predictions[[id]])
+    }, res = 110)
+
+    output[[paste0(id, "_metrics")]] <- renderUI({
+      score <- scores()[[id]]
+      tags$small(
+        class = "text-nowrap fw-normal",
+        sprintf("train %.0f%% · test %.0f%%", 100 * score["train"], 100 * score["test"])
+      )
+    })
+  }))
 }
 
 shinyApp(ui, server)
