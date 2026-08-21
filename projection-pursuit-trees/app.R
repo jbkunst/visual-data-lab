@@ -185,9 +185,9 @@ draw_surface <- function(data, grid, prediction) {
   box(col = "#ced4da")
 }
 
-draw_comparison <- function(scores, fit_time, predict_time, labels, classes) {
+draw_comparison <- function(scores, fit_time, predict_time, predictions, labels, classes) {
   score <- do.call(rbind, scores)
-  old <- par(mfrow = c(1, 3), mar = c(7, 4, 2.5, 0.8), cex = 0.85)
+  old <- par(mfrow = c(2, 2), mar = c(6, 5, 2.5, 0.8), cex = 0.85)
   on.exit(par(old))
 
   barplot(
@@ -216,6 +216,22 @@ draw_comparison <- function(scores, fit_time, predict_time, labels, classes) {
     rep(seq_len(nrow(recall)), ncol(recall)),
     rep(seq_len(ncol(recall)), each = nrow(recall)),
     sprintf("%.0f", 100 * recall), cex = 0.7
+  )
+
+  agreement <- vapply(predictions, function(reference) {
+    vapply(predictions, function(prediction) mean(prediction == reference), numeric(1))
+  }, numeric(length(predictions)))
+  image(
+    seq_along(labels), seq_along(labels), agreement,
+    col = hcl.colors(10, "BluYl"), zlim = c(0, 1), axes = FALSE,
+    xlab = "", ylab = "", main = "Agreement on prediction grid"
+  )
+  axis(1, seq_along(labels), labels, las = 2)
+  axis(2, seq_along(labels), labels, las = 1)
+  text(
+    rep(seq_along(labels), length(labels)),
+    rep(seq_along(labels), each = length(labels)),
+    sprintf("%.0f", 100 * agreement), cex = 0.55
   )
 }
 
@@ -321,7 +337,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$compare, showModal(modalDialog(
     title = "Compare models",
-    plotOutput("comparison_plot", height = 460),
+    plotOutput("comparison_plot", height = 720),
     size = "xl", easyClose = TRUE, footer = modalButton("Close")
   )))
 
@@ -330,6 +346,7 @@ server <- function(input, output, session) {
       scores(),
       vapply(fits(), \(x) x$time, numeric(1)),
       vapply(surfaces()$results, \(x) x$time, numeric(1)),
+      lapply(surfaces()$results, \(x) x$prediction),
       vapply(models, \(x) x$label, character(1)),
       levels(data()$class)
     )
