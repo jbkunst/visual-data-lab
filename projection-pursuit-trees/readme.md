@@ -1,17 +1,22 @@
-The app fits six classifiers to the same three-class, two-dimensional data and predicts every point on one shared grid.
+The app fits nine classifiers to the same three-class, two-dimensional data and predicts every point on one shared grid.
 
 The colored background is the **predicted class**, not a continuous probability surface. Each observed point uses the color of its true class, so a point on a differently colored region is a visible classification error.
 
 ## Models
 
+- **Multinomial logistic regression:** a linear probabilistic baseline.
+- **KNN:** a local classifier whose regions follow nearby observations.
+- **Radial SVM:** a smooth nonlinear classifier.
 - **rpart:** one tree with axis-aligned, rectangular regions.
 - **PPtree:** one compact tree whose splits may use linear combinations of `x1` and `x2`.
 - **PPtreeExt:** a more flexible projection pursuit tree that allows additional oblique regions.
 - **Random forest:** an ensemble of axis-aligned trees.
 - **PPforest:** an ensemble of projection pursuit trees.
-- **KNN:** a local classifier whose regions follow nearby observations.
+- **XGBoost:** a boosted ensemble of axis-aligned trees.
 
 Every card reports accuracy on the 70% training partition and the 30% test partition. These values describe the current sample; they are not a repeated performance benchmark.
+
+**Compare results** opens three summaries: train versus test accuracy, fitting versus shared-grid prediction time, and test recall for each class. Timing describes this browser session and should not be treated as a formal benchmark.
 
 ## Datasets
 
@@ -21,7 +26,7 @@ Every card reports accuracy on the 70% training partition and the 30% test parti
 
 This app develops the prediction-grid idea used in Joshua Kunst's [`klassets`](https://github.com/jbkunst/klassets) from binary probability surfaces into a consistent comparison of multiclass decision regions.
 
-It is also a didactic companion to da Silva, Cook, and Lee's work on PPtreeExt. Their application compares `rpart`, PPtree, and PPtreeExt while developing and diagnosing two algorithmic extensions. This app keeps the 2D visual comparison but expands it to single trees, forests, and a local classifier.
+It is also a didactic companion to da Silva, Cook, and Lee's work on PPtreeExt. Their application compares `rpart`, PPtree, and PPtreeExt while developing and diagnosing two algorithmic extensions. This app keeps the 2D visual comparison but expands it to linear, local, kernel, tree, forest, and boosting classifiers.
 
 ## References
 

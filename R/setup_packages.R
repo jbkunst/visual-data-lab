@@ -5,6 +5,7 @@ cran_packages <- c(
   "cli",
   "deldir",
   "dplyr",
+  "e1071",
   "fs",
   "ggforce",
   "ggplot2",
