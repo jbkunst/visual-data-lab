@@ -1,0 +1,4 @@
+Title: Expectation-Maximization Step by Step
+Description: Alternate between soft memberships and Gaussian parameter updates to see the EM algorithm converge.
+Categories: statistics, machine learning, clustering, simulation
+Status: draft
