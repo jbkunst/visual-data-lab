@@ -188,7 +188,7 @@ package release. The workflow is defined in
 The workflow's known-good build configuration is intentional:
 
 - run on `ubuntu-24.04`;
-- check out the `vdltheme-v<version>` release tag, not the moving `master`
+- check out the `vdltheme-v<version>` release tag, not the moving `main`
   branch;
 - check out `r-wasm/actions` with `ref: v3` into `.actions`;
 - invoke the local composite action with `uses: ./.actions/build-rwasm`;
@@ -210,7 +210,7 @@ When changing `vdltheme`:
 
    ```sh
    gh release create vdltheme-v0.0.4 \
-     --target master \
+     --target main \
      --title vdltheme-v0.0.4 \
      --generate-notes
    ```
@@ -358,9 +358,9 @@ The build:
 
 ## Publishing
 
-GitHub Actions runs the same build for pull requests and pushes to `master`.
+GitHub Actions runs the same build for pull requests and pushes to `main`.
 
-Pull requests build the complete site as a compatibility check but do not publish it. Pushes to `master` build `docs/` and deploy that directory as a GitHub Pages artifact.
+Pull requests build the complete site as a compatibility check but do not publish it. Pushes to `main` build `docs/` and deploy that directory as a GitHub Pages artifact.
 
 GitHub Pages should use **GitHub Actions** as its publishing source. No generated `docs/` branch or commit is required.
 
@@ -382,6 +382,6 @@ For MathJax inside included Markdown, use double backslashes:
 Run an app from a fresh copy of the repository with:
 
 ```r
-source("https://raw.githubusercontent.com/jbkunst/visual-data-lab/master/R/run_app.R")
+source("https://raw.githubusercontent.com/jbkunst/visual-data-lab/main/R/run_app.R")
 run_app("kmeans")
 ```
