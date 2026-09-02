@@ -15,6 +15,9 @@ library(cli)
 chrome_path  <- "C:/Program Files/Google/Chrome/Application/chrome.exe"
 preview_port <- 8000
 
+site_config <- yaml::read_yaml("_quarto.yml")
+ga_measurement_id <- site_config$website[["google-analytics"]]
+
 # helpers ----------------------------------------------------------------
 value <- function(desc, name, default = "") {
   x <- desc[[name]]
@@ -34,6 +37,39 @@ as_csv <- function(x) {
     pluck(1) |>
     str_squish() |>
     discard(~ !nzchar(.x))
+}
+
+google_analytics_inject <- function(index_file, measurement_id) {
+  if (is.null(measurement_id) || !nzchar(measurement_id)) {
+    return(invisible(FALSE))
+  }
+
+  html <- readLines(index_file, warn = FALSE, encoding = "UTF-8")
+
+  if (any(str_detect(html, fixed(measurement_id)))) {
+    return(invisible(FALSE))
+  }
+
+  head_end <- which(str_detect(html, fixed("</head>")))[1]
+
+  if (is.na(head_end)) {
+    stop("Shinylive index.html is missing </head>.", call. = FALSE)
+  }
+
+  google_tag <- c(
+    glue('<script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>'),
+    "<script>",
+    "  window.dataLayer = window.dataLayer || [];",
+    "  function gtag(){dataLayer.push(arguments);}",
+    "  gtag('js', new Date());",
+    glue("  gtag('config', '{measurement_id}');"),
+    "</script>"
+  )
+
+  html <- append(html, google_tag, after = head_end - 1L)
+  writeLines(html, index_file, useBytes = TRUE)
+
+  invisible(TRUE)
 }
 
 screenshot_generate_and_copy <- function(app, slug) {
@@ -74,6 +110,7 @@ shinylive_export_catch <- function(meta) {
         stop("Shinylive export completed, but index.html is missing.", call. = FALSE)
       }
 
+      google_analytics_inject(index_file, ga_measurement_id)
       cli::cli_alert_success("Exported {meta$app}")
       list(ok = TRUE, message = "Shinylive export completed.")
     },
