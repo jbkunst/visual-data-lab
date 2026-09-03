@@ -1,3 +1,4 @@
 Title: ARMA Process Simulation
 Description: See how AR and MA settings change a simulated time series and its autocorrelation patterns.
+ImageAlt: A simulated ARMA time series with autocorrelation and partial autocorrelation charts.
 Categories: statistics, simulation, time series

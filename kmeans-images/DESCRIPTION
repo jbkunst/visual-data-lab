@@ -1,5 +1,6 @@
 Title: K-means on Images
 Description: Apply K-means to image colors and compare the original image with a compressed color version.
+ImageAlt: Original and compressed images with sampled color clusters in the K-means experiment.
 Categories: machine learning, clustering, visualization
 Runtime: server
 AppURL: https://jbkunst-kmeans-images.share.connect.posit.cloud

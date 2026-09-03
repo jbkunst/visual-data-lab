@@ -1,7 +1,7 @@
 run_app <- function(app = "kmeans") {
   project_name <- "Visual Data Lab"
   repo_slug <- "visual-data-lab"
-  url <- paste0("https://github.com/jbkunst/", repo_slug, "/archive/refs/heads/master.zip")
+  url <- paste0("https://github.com/jbkunst/", repo_slug, "/archive/refs/heads/main.zip")
 
   filePath <- tempfile("shinyapp", fileext = ".zip")
   fileDir  <- tempfile("shinyapp")
@@ -12,7 +12,7 @@ run_app <- function(app = "kmeans") {
 
   try(utils::unzip(filePath, exdir = fileDir))
 
-  fp <- file.path(fileDir, paste0(repo_slug, "-master"), app)
+  fp <- file.path(fileDir, paste0(repo_slug, "-main"), app)
 
   shiny::runApp(fp)
 

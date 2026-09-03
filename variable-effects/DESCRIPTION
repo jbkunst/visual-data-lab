@@ -1,3 +1,4 @@
 Title: Variable Effects
 Description: Compare how credit-risk models respond to each predictor using PDP, ALE, ICE, and the observed distribution.
+ImageAlt: PDP, ALE, ICE, and observed-distribution charts for a credit-risk predictor.
 Categories: machine learning, explainability, credit risk

@@ -6,10 +6,14 @@ project:
   resources:
     - site-assets/
 
+lang: en
+author-meta: "Joshua Kunst"
+
 website:
   title: "Visual Data Lab"
-  description: "Interactive experiments for exploring data, statistical models, and machine-learning algorithms through visualization."
   site-url: "https://jkunst.com/visual-data-lab/"
+  open-graph: true
+  twitter-card: true
   google-analytics: "G-ECZ9XLT78C"
   search: false
   navbar:
@@ -27,6 +31,7 @@ format:
   html:
     theme: cosmo
     css: site-assets/catalog.css
+    canonical-url: true
     include-in-header:
       text: |
         <meta name="google-site-verification" content="pLmyRYfU13GaMc8sk2zMHqhTE6r4PvcAJ5C4bK5VW9E">

@@ -1,5 +1,6 @@
 Title: Dimensionality Reduction
 Description: Compare PCA, Isomap, t-SNE, and UMAP on simulated and real high-dimensional datasets.
+ImageAlt: High-dimensional data shown in three dimensions and as PCA, Isomap, t-SNE, and UMAP projections.
 Categories: machine learning, visualization, mathematics
 Runtime: server
 AppURL: https://jbkunst-dimensionality-reduction.share.connect.posit.cloud

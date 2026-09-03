@@ -1,3 +1,4 @@
 Title: Underfitting and Overfitting
 Description: Adjust a kernel smoother and reveal test data and the true relationship to explore model flexibility and generalization.
+ImageAlt: A fitted curve with training data and error charts across smoothing bandwidths.
 Categories: machine learning, statistics, regression

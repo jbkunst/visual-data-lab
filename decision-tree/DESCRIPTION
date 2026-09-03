@@ -1,3 +1,4 @@
 Title: Decision Tree
 Description: Build synthetic classification data and watch a decision tree carve the feature space into regions.
+ImageAlt: A decision-tree experiment with a classification boundary, tree diagram, and model diagnostics.
 Categories: machine learning, classification, simulation
