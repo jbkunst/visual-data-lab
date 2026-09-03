@@ -1,9 +1,8 @@
 ---
 title: "Visual Data Lab"
-description: "Interactive experiments for exploring data, statistical models, and machine-learning algorithms through visualization."
-lang: en
-open-graph: true
-twitter-card: true
+description: "Explore interactive experiments that make statistical models and machine-learning algorithms easier to understand through visualization."
+image: site-assets/screenshots/kmeans.png
+image-alt: "A K-means experiment with clustered points, centroids, and model diagnostics."
 page-layout: full
 body-classes: catalog-page
 title-block-banner: true
@@ -20,7 +19,10 @@ listing:
       - title
       - description
       - image
+      - image-alt
 ---
+
+Explore data, statistical models, and machine-learning algorithms through small interactive experiments.
 
 :::{#apps-list}
 :::

@@ -1,3 +1,4 @@
 Title: ROC Curve
 Description: Explore how score distributions, class balance, and thresholds shape ROC curves and classification metrics.
+ImageAlt: Score distributions, an ROC curve, a confusion matrix, and threshold metrics.
 Categories: machine learning, classification, statistics

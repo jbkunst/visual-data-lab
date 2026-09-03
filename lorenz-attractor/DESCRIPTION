@@ -1,3 +1,4 @@
 Title: Lorenz Attractor
 Description: Adjust the Lorenz parameters and watch how small changes produce chaotic 3D trajectories.
+ImageAlt: A three-dimensional Lorenz attractor with projection plots and parameter controls.
 Categories: mathematics, simulation, visualization

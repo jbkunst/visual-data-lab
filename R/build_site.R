@@ -15,7 +15,11 @@ library(cli)
 chrome_path  <- "C:/Program Files/Google/Chrome/Application/chrome.exe"
 preview_port <- 8000
 
-site_config <- yaml::read_yaml("_quarto.yml")
+site_config       <- read_yaml("_quarto.yml")
+site_url          <- str_remove(site_config$website[["site-url"]], "/+$")
+site_title        <- site_config$website$title
+site_lang         <- site_config$lang
+site_author       <- site_config[["author-meta"]]
 ga_measurement_id <- site_config$website[["google-analytics"]]
 
 # helpers ----------------------------------------------------------------
@@ -39,34 +43,65 @@ as_csv <- function(x) {
     discard(~ !nzchar(.x))
 }
 
-google_analytics_inject <- function(index_file, measurement_id) {
-  if (is.null(measurement_id) || !nzchar(measurement_id)) {
-    return(invisible(FALSE))
-  }
+html_attribute <- function(x) {
+  x |>
+    str_replace_all(fixed("&"), "&amp;") |>
+    str_replace_all(fixed('"'), "&quot;") |>
+    str_replace_all(fixed("<"), "&lt;") |>
+    str_replace_all(fixed(">"), "&gt;")
+}
 
+page_metadata_inject <- function(index_file, meta) {
   html <- readLines(index_file, warn = FALSE, encoding = "UTF-8")
-
-  if (any(str_detect(html, fixed(measurement_id)))) {
-    return(invisible(FALSE))
-  }
-
   head_end <- which(str_detect(html, fixed("</head>")))[1]
 
   if (is.na(head_end)) {
     stop("Shinylive index.html is missing </head>.", call. = FALSE)
   }
 
-  google_tag <- c(
-    glue('<script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>'),
-    "<script>",
-    "  window.dataLayer = window.dataLayer || [];",
-    "  function gtag(){dataLayer.push(arguments);}",
-    "  gtag('js', new Date());",
-    glue("  gtag('config', '{measurement_id}');"),
-    "</script>"
+  canonical_url <- glue("{site_url}/live/{meta$slug}/")
+  image_url <- glue("{site_url}/site-assets/screenshots/{meta$slug}.png")
+  title <- html_attribute(meta$title)
+  description <- html_attribute(meta$description)
+  image_alt <- html_attribute(meta$image_alt)
+
+  metadata <- c(
+    glue('<meta name="description" content="{description}">'),
+    glue('<meta name="author" content="{html_attribute(site_author)}">'),
+    glue('<link rel="canonical" href="{canonical_url}">'),
+    '<meta property="og:type" content="website">',
+    glue('<meta property="og:site_name" content="{html_attribute(site_title)}">'),
+    glue('<meta property="og:title" content="{title}">'),
+    glue('<meta property="og:description" content="{description}">'),
+    glue('<meta property="og:url" content="{canonical_url}">'),
+    glue('<meta property="og:image" content="{image_url}">'),
+    glue('<meta property="og:image:alt" content="{image_alt}">'),
+    '<meta name="twitter:card" content="summary_large_image">',
+    glue('<meta name="twitter:title" content="{title}">'),
+    glue('<meta name="twitter:description" content="{description}">'),
+    glue('<meta name="twitter:image" content="{image_url}">'),
+    glue('<meta name="twitter:image:alt" content="{image_alt}">')
   )
 
-  html <- append(html, google_tag, after = head_end - 1L)
+  if (!is.null(ga_measurement_id) && nzchar(ga_measurement_id)) {
+    metadata <- c(
+      metadata,
+      glue('<script async src="https://www.googletagmanager.com/gtag/js?id={ga_measurement_id}"></script>'),
+      "<script>",
+      "  window.dataLayer = window.dataLayer || [];",
+      "  function gtag(){dataLayer.push(arguments);}",
+      "  gtag('js', new Date());",
+      glue("  gtag('config', '{ga_measurement_id}');"),
+      "</script>"
+    )
+  }
+
+  html <- str_replace(
+    html,
+    regex('<html lang="[^"]*">'),
+    glue('<html lang="{html_attribute(site_lang)}">')
+  )
+  html <- append(html, metadata, after = head_end - 1L)
   writeLines(html, index_file, useBytes = TRUE)
 
   invisible(TRUE)
@@ -110,7 +145,7 @@ shinylive_export_catch <- function(meta) {
         stop("Shinylive export completed, but index.html is missing.", call. = FALSE)
       }
 
-      google_analytics_inject(index_file, ga_measurement_id)
+      page_metadata_inject(index_file, meta)
       cli::cli_alert_success("Exported {meta$app}")
       list(ok = TRUE, message = "Shinylive export completed.")
     },
@@ -156,6 +191,7 @@ apps <- map_dfr(app_dirs, function(app) {
     app = app,
     title = value(desc, "Title"),
     description = value(desc, "Description"),
+    image_alt = value(desc, "ImageAlt"),
     slug = app,
     categories = list(as_csv(value(desc, "Categories"))),
     runtime = str_to_lower(value(desc, "Runtime", "shinylive")),
@@ -180,11 +216,12 @@ if (nrow(apps) == 0) {
 metadata_errors <- apps |>
   mutate(
     missing = pmap_chr(
-      list(.data$title, .data$description, .data$categories, .data$runtime, .data$app_url),
-      function(title, description, categories, runtime, app_url) {
+      list(.data$title, .data$description, .data$image_alt, .data$categories, .data$runtime, .data$app_url),
+      function(title, description, image_alt, categories, runtime, app_url) {
         missing <- c(
           if (!nzchar(title)) "Title",
           if (!nzchar(description)) "Description",
+          if (!nzchar(image_alt)) "ImageAlt",
           if (length(categories) == 0) "Categories",
           if (!runtime %in% c("shinylive", "server")) "Runtime",
           if (identical(runtime, "server") && !nzchar(app_url)) "AppURL"
@@ -261,6 +298,7 @@ cards <- apps$app |>
       title = meta$title,
       description = meta$description,
       image = image,
+      `image-alt` = meta$image_alt,
       # Keep editorial categories in DESCRIPTION focused on subject matter.
       # Server apps receive one generated tag so the gallery can filter the
       # faster-to-demo Connect deployments without labeling every browser app.

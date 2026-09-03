@@ -1,3 +1,4 @@
 Title: Model Quality Explorer
 Description: Explore how variables build or reduce credit-model quality through permutation, SAGE, metric diagnostics, and cumulative gains.
+ImageAlt: A credit-model quality dashboard with metric diagnostics and cumulative gains charts.
 Categories: machine learning, explainability, credit risk

@@ -27,6 +27,7 @@ Each public app needs a `DESCRIPTION` file:
 ```text
 Title: App Title
 Description: A short sentence that explains what learners can explore.
+ImageAlt: A concise description of the app screenshot.
 Categories: statistics, simulation
 ```
 

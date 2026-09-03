@@ -1,3 +1,4 @@
 Title: K-means Step by Step
 Description: Move through each K-means iteration to see centers, assignments, and convergence on generated clusters.
+ImageAlt: Clustered points, centroids, and convergence diagnostics in the K-means experiment.
 Categories: machine learning, clustering, simulation

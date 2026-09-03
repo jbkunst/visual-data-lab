@@ -1,3 +1,4 @@
 Title: Logistic Regression
 Description: Change noise, polynomial terms, and class structure to see how logistic regression shapes decision boundaries.
+ImageAlt: Simulated classes, a logistic-regression decision boundary, and model diagnostics.
 Categories: machine learning, classification, regression
