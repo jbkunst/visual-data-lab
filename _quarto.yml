@@ -9,7 +9,8 @@ project:
 website:
   title: "Visual Data Lab"
   description: "Interactive experiments for exploring data, statistical models, and machine-learning algorithms through visualization."
-  site-url: "https://jbkunst.github.io/visual-data-lab/"
+  site-url: "https://jkunst.com/visual-data-lab/"
+  google-analytics: "G-ECZ9XLT78C"
   search: false
   navbar:
     title: "jk"
