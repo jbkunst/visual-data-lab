@@ -5,17 +5,22 @@ library(highcharter)
 library(tibble)
 library(markdown)
 library(vdltheme)
+library(shinymodist)
 
 # theme -------------------------------------------------------------------
 apptheme <- theme_vdl()
 
-sidebar <- purrr::partial(bslib::sidebar, width = 300, padding = "0.75rem")
+# bslib gives sidebar accordions negative horizontal margins. Hide that
+# overflow here so resizing the sidebar does not reveal a horizontal scrollbar.
+sidebar <- purrr::partial(
+  bslib::sidebar,
+  width = 300,
+  padding = "0.75rem",
+  style = "overflow-x: hidden;"
+)
 card <- purrr::partial(bslib::card, full_screen = TRUE, wrapper = purrr::partial(bslib::card_body, padding = 0))
 
 # app options -------------------------------------------------------------
-mean_negative_choices <- c("-4", "-3", "-2", "-1", "-0.5", "0")
-mean_positive_choices <- c("0", "0.5", "1", "2", "3", "4")
-sd_choices <- c("0.5", "1", "1.5", "2")
 n_choices <- c("100", "500", "1000", "5000")
 proportion_choices <- as.character(seq(10, 90, by = 10))
 
@@ -100,7 +105,7 @@ metric_chart_data <- function(data) {
 
 
 # development input -------------------------------------------------------
-# input <- list(mean_1 = "-1", sd_1 = "1", mean_2 = "1", sd_2 = "1", threshold = 0, n = "500", p_1 = "50")
+# input <- list(negative_distribution = list(mu = -1, sigma = 1), positive_distribution = list(mu = 1, sigma = 1), threshold = 0, n = "500", p_1 = "50")
 
 # ui ----------------------------------------------------------------------
 ui <- page_fillable(
@@ -120,18 +125,21 @@ ui <- page_fillable(
         justified = TRUE,
         status = "primary"
       ),
-      tags$small("Positive distribution"),
-      layout_columns(
-        col_widths = c(6, 6),
-        shinyWidgets::sliderTextInput("mean_2", tags$small("Mean"), choices = mean_positive_choices, selected = "1", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE),
-        shinyWidgets::sliderTextInput("sd_2", tags$small("SD"), choices = sd_choices, selected = "1", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE)
-      ),
-
       tags$small("Negative distribution"),
-      layout_columns(
-        col_widths = c(6, 6),
-        shinyWidgets::sliderTextInput("mean_1", tags$small("Mean"), choices = mean_negative_choices, selected = "-1", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE),
-        shinyWidgets::sliderTextInput("sd_1", tags$small("SD"), choices = sd_choices, selected = "1", grid = FALSE, hide_min_max = TRUE, dragRange = FALSE)
+      # Keep the default responsive height so modist reflows in both directions
+      # when the resizable sidebar becomes narrower or wider.
+      modist_input(
+        "negative_distribution",
+        family = "normal",
+        value = list(mu = -1, sigma = 1),
+        domain = c(-5, 5)
+      ),
+      tags$small("Positive distribution"),
+      modist_input(
+        "positive_distribution",
+        family = "normal",
+        value = list(mu = 1, sigma = 1),
+        domain = c(-5, 5)
       ),
 
       sliderInput("threshold", input_label_vdl("Threshold", "Scores at or above this value are classified as positive."), min = -5, max = 5, value = 0, step = 0.1, ticks = FALSE),
@@ -182,8 +190,8 @@ server <- function(input, output, session) {
 
     tibble(
       score = c(
-        rnorm(n_negative, as.numeric(input$mean_1[[1]]), as.numeric(input$sd_1[[1]])),
-        rnorm(n_positive, as.numeric(input$mean_2[[1]]), as.numeric(input$sd_2[[1]]))
+        rnorm(n_negative, input$negative_distribution$mu, input$negative_distribution$sigma),
+        rnorm(n_positive, input$positive_distribution$mu, input$positive_distribution$sigma)
       ),
       observed = factor(
         c(rep("Negative", n_negative), rep("Positive", n_positive)),
@@ -218,10 +226,10 @@ server <- function(input, output, session) {
         })
       )
     } else {
-      mean_1 <- as.numeric(input$mean_1[[1]])
-      mean_2 <- as.numeric(input$mean_2[[1]])
-      sd_1 <- as.numeric(input$sd_1[[1]])
-      sd_2 <- as.numeric(input$sd_2[[1]])
+      mean_1 <- input$negative_distribution$mu
+      mean_2 <- input$positive_distribution$mu
+      sd_1 <- input$negative_distribution$sigma
+      sd_2 <- input$positive_distribution$sigma
       p_positive <- as.numeric(input$p_1[[1]]) / 100
 
       score_grid <- seq(
@@ -268,10 +276,10 @@ server <- function(input, output, session) {
       ))
     }
 
-    mean_1 <- as.numeric(input$mean_1[[1]])
-    mean_2 <- as.numeric(input$mean_2[[1]])
-    sd_1 <- as.numeric(input$sd_1[[1]])
-    sd_2 <- as.numeric(input$sd_2[[1]])
+    mean_1 <- input$negative_distribution$mu
+    mean_2 <- input$positive_distribution$mu
+    sd_1 <- input$negative_distribution$sigma
+    sd_2 <- input$positive_distribution$sigma
     threshold <- seq(
       max(mean_1 + 5 * sd_1, mean_2 + 5 * sd_2),
       min(mean_1 - 5 * sd_1, mean_2 - 5 * sd_2),
@@ -301,10 +309,10 @@ server <- function(input, output, session) {
     } else {
       n <- as.integer(input$n[[1]])
       p_positive <- as.numeric(input$p_1[[1]]) / 100
-      mean_1 <- as.numeric(input$mean_1[[1]])
-      mean_2 <- as.numeric(input$mean_2[[1]])
-      sd_1 <- as.numeric(input$sd_1[[1]])
-      sd_2 <- as.numeric(input$sd_2[[1]])
+      mean_1 <- input$negative_distribution$mu
+      mean_2 <- input$positive_distribution$mu
+      sd_1 <- input$negative_distribution$sigma
+      sd_2 <- input$positive_distribution$sigma
       n_positive <- round(n * p_positive)
       n_negative <- n - n_positive
 
@@ -342,10 +350,10 @@ server <- function(input, output, session) {
       roc <- roc_data()
       auc <- sum(diff(roc$fpr) * (head(roc$tpr, -1) + tail(roc$tpr, -1)) / 2)
     } else {
-      mean_1 <- as.numeric(input$mean_1[[1]])
-      mean_2 <- as.numeric(input$mean_2[[1]])
-      sd_1 <- as.numeric(input$sd_1[[1]])
-      sd_2 <- as.numeric(input$sd_2[[1]])
+      mean_1 <- input$negative_distribution$mu
+      mean_2 <- input$positive_distribution$mu
+      sd_1 <- input$negative_distribution$sigma
+      sd_2 <- input$positive_distribution$sigma
       auc <- pnorm((mean_2 - mean_1) / sqrt(sd_1^2 + sd_2^2))
     }
 
@@ -494,7 +502,7 @@ server <- function(input, output, session) {
   })
 
   observeEvent(
-    list(input$mode, input$mean_1, input$sd_1, input$mean_2, input$sd_2, input$p_1, input$n),
+    list(input$mode, input$negative_distribution, input$positive_distribution, input$p_1, input$n),
     {
       density <- density_data()
       y_max <- max(density$density)
