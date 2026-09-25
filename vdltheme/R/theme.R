@@ -57,6 +57,10 @@ font_vdl <- function() {
 #' @return A `highcharter` theme.
 #' @export
 highcharter_theme_vdl <- function(...) {
+  if (!requireNamespace("highcharter", quietly = TRUE)) {
+    stop("Package 'highcharter' is required for highcharter_theme_vdl().", call. = FALSE)
+  }
+
   theme <- theme_vdl()
   defaults <- highcharter::hc_theme(
     chart = list(style = list(fontFamily = "IBM Plex Sans, sans-serif")),

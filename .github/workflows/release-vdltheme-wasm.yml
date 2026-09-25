@@ -40,7 +40,7 @@ jobs:
           packages: "./vdltheme"
           strip: "demo, doc, examples, help, html, include, tests, vignette"
           image-path: ._rwasm
-          webr-image: ghcr.io/r-wasm/webr:v0.6.0
+          webr-image: ghcr.io/r-wasm/webr:main
 
       - name: Upload Wasm image to release
         uses: svenstaro/upload-release-action@v2
