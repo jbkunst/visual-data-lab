@@ -35,6 +35,41 @@ The folder name is the app slug.
 
 Shinylive is the default runtime. It does not need to be declared explicitly.
 
+Every public Shinylive app must declare a dependency pool. Apps in a pool share
+one Shinylive runtime, reducing the package metadata mounted for apps in other
+pools while retaining browser-cache reuse within the pool.
+
+The goal is to improve cold-start performance without changing app behavior:
+group apps by their dominant dependency stack so the first load downloads only
+the relevant runtime, while later apps from the same pool reuse the browser
+cache. Prefer a small number of meaningful pools; do not create one pool per
+app.
+
+Pool names describe dependency profiles, not the subject of an app. The current
+taxonomy is:
+
+- `standard`: the common visualization stack, currently centered on
+  Highcharter;
+- `modeling`: modeling apps centered on ggplot2 and related packages, including
+  `risk3r` consumers;
+- `extended`: less frequently used or specialized dependency stacks, currently
+  Plotly;
+- `light`: focused apps with a small, isolated dependency set.
+
+Choose a pool from the app's resolved package set rather than its editorial
+category. Keep these names stable unless the dependency profiles materially
+change.
+
+For example:
+
+```text
+ShinylivePool: standard
+```
+
+The site build exports the app to `docs/live/<pool>/<app>/` and generates the
+matching gallery URL. Keep pool names lowercase, using letters, numbers, and
+hyphens only.
+
 For an app hosted on Posit Connect Cloud:
 
 ```text
@@ -92,13 +127,14 @@ ignored Shinylive output, export the app, and serve it in the background:
 ```r
 app_folder <- "underfitting-overfitting"
 slug <- app_folder
+pool <- "standard" # ShinylivePool in DESCRIPTION
 port <- 8000
 
 unlink("docs/live", recursive = TRUE, force = TRUE)
 
 shinylive::export(
   appdir = app_folder,
-  destdir = "docs/live",
+  destdir = file.path("docs/live", pool),
   subdir = slug,
   package_cache = FALSE
 )
@@ -113,7 +149,7 @@ server <- httpuv::runStaticServer(
 
 later::later(
   function() {
-    browseURL(sprintf("http://127.0.0.1:%s/%s/", port, slug))
+    browseURL(sprintf("http://127.0.0.1:%s/%s/%s/", port, pool, slug))
   },
   delay = 1
 )
@@ -210,9 +246,9 @@ When changing `vdltheme`:
 2. Push the commit, then publish a tag named `vdltheme-v<version>`:
 
    ```sh
-   gh release create vdltheme-v0.0.4 \
+   gh release create vdltheme-v0.0.5 \
      --target main \
-     --title vdltheme-v0.0.4 \
+     --title vdltheme-v0.0.5 \
      --generate-notes
    ```
 
@@ -225,7 +261,7 @@ When changing `vdltheme`:
    remotes::install_github(
      "jbkunst/visual-data-lab",
      subdir = "vdltheme",
-     ref = "vdltheme-v0.0.4",
+     ref = "vdltheme-v0.0.5",
      upgrade = "never",
      force = TRUE
    )
@@ -244,7 +280,7 @@ When changing `vdltheme`:
 The release workflow can also rebuild an existing tag manually:
 
 ```sh
-gh workflow run release-vdltheme-wasm.yml -f tag=vdltheme-v0.0.4
+gh workflow run release-vdltheme-wasm.yml -f tag=vdltheme-v0.0.5
 ```
 
 Keep the package release, the locally installed tag, the Pages workflow ref,
@@ -351,7 +387,7 @@ The build:
 
 1. reads app metadata;
 2. skips drafts;
-3. exports every Shinylive app to `docs/live/`;
+3. exports every Shinylive app to `docs/live/<pool>/`;
 4. stops if a declared Shinylive app cannot be exported;
 5. uses `AppURL` for server apps;
 6. prepares gallery screenshots and `apps.yml`;

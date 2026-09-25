@@ -9,6 +9,8 @@ When editing apps:
 - Do not build an external framework around the apps; keep app-specific structure inside each app folder.
 - Use shared scripts only for repository tasks such as building the catalog, exporting Shinylive apps, or publishing.
 - Do not run `R/build_site.R` locally. GitHub Actions owns the site build and generated `apps.yml` and `docs/` outputs.
+- Preserve the Shinylive pool strategy: every public Shinylive app declares `ShinylivePool`, and apps are grouped by their dominant dependency stack to reduce cold-start downloads while reusing the browser cache within a pool. Prefer a few meaningful pools over one pool per app.
+- Treat pool names as technical dependency profiles, not editorial categories: `standard` is the common Highcharter-centered stack, `modeling` is the ggplot2/modeling stack, `extended` is for less common specialized stacks such as Plotly, and `light` is for small focused dependency sets.
 - Keep UI text and educational flow simple.
 - Use `vdltheme::theme_vdl()` and, when needed, `vdltheme::highcharter_theme_vdl()` instead of defining app-local themes. Pokémon and Matrix are the visual-theme exceptions.
 - Make small, reviewable changes.

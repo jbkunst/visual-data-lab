@@ -59,7 +59,7 @@ page_metadata_inject <- function(index_file, meta) {
     stop("Shinylive index.html is missing </head>.", call. = FALSE)
   }
 
-  canonical_url <- glue("{site_url}/live/{meta$slug}/")
+  canonical_url <- glue("{site_url}/live/{meta$shinylive_pool}/{meta$slug}/")
   image_url <- glue("{site_url}/site-assets/screenshots/{meta$slug}.png")
   title <- html_attribute(meta$title)
   description <- html_attribute(meta$description)
@@ -128,18 +128,20 @@ screenshot_generate_and_copy <- function(app, slug) {
 }
 
 shinylive_export_catch <- function(meta) {
-  cli::cli_h2(glue("Exporting Shinylive app: {meta$app}"))
+  pool_dir <- path("docs/live", meta$shinylive_pool)
+  cli::cli_h2(glue("Exporting Shinylive app: {meta$app} ({meta$shinylive_pool} pool)"))
 
   tryCatch(
     {
+      dir_create(pool_dir)
       shinylive::export(
         meta$app,
-        "docs/live",
+        pool_dir,
         subdir = meta$slug,
         template_params = list(title = meta$title)
       )
 
-      index_file <- path("docs/live", meta$slug, "index.html")
+      index_file <- path(pool_dir, meta$slug, "index.html")
 
       if (!file_exists(index_file)) {
         stop("Shinylive export completed, but index.html is missing.", call. = FALSE)
@@ -195,6 +197,7 @@ apps <- map_dfr(app_dirs, function(app) {
     slug = app,
     categories = list(as_csv(value(desc, "Categories"))),
     runtime = str_to_lower(value(desc, "Runtime", "shinylive")),
+    shinylive_pool = value(desc, "ShinylivePool"),
     app_url = value(desc, "AppURL"),
     status = str_to_lower(value(desc, "Status"))
   )
@@ -216,14 +219,15 @@ if (nrow(apps) == 0) {
 metadata_errors <- apps |>
   mutate(
     missing = pmap_chr(
-      list(.data$title, .data$description, .data$image_alt, .data$categories, .data$runtime, .data$app_url),
-      function(title, description, image_alt, categories, runtime, app_url) {
+      list(.data$title, .data$description, .data$image_alt, .data$categories, .data$runtime, .data$shinylive_pool, .data$app_url),
+      function(title, description, image_alt, categories, runtime, shinylive_pool, app_url) {
         missing <- c(
           if (!nzchar(title)) "Title",
           if (!nzchar(description)) "Description",
           if (!nzchar(image_alt)) "ImageAlt",
           if (length(categories) == 0) "Categories",
           if (!runtime %in% c("shinylive", "server")) "Runtime",
+          if (identical(runtime, "shinylive") && !str_detect(shinylive_pool, "^[a-z0-9][a-z0-9-]*$")) "ShinylivePool",
           if (identical(runtime, "server") && !nzchar(app_url)) "AppURL"
         )
 
@@ -244,7 +248,16 @@ if (nrow(metadata_errors) > 0) {
 cli::cli_h1("Shinylive")
 
 shinylive_apps <- apps |>
-  filter(.data$runtime == "shinylive")
+  filter(.data$runtime == "shinylive") |>
+  arrange(.data$shinylive_pool, .data$app)
+
+shinylive_pools <- shinylive_apps |>
+  count(.data$shinylive_pool, name = "apps") |>
+  arrange(.data$shinylive_pool)
+
+cli::cli_alert_info(
+  "Shinylive pools: {paste(glue('{shinylive_pools$shinylive_pool} ({shinylive_pools$apps})'), collapse = ', ')}"
+)
 
 server_apps <- apps |>
   filter(.data$runtime == "server")
@@ -277,6 +290,27 @@ if (length(shinylive_failed) > 0) {
   )
 }
 
+shinylive_pool_stats <- shinylive_pools |>
+  mutate(
+    package_names = map(
+      .data$shinylive_pool,
+      ~ names(readRDS(path("docs/live", .x, "shinylive/webr/packages/metadata.rds")))
+    ),
+    packages = map_int(.data$package_names, length),
+    bytes = map_dbl(
+      .data$shinylive_pool,
+      ~ sum(as.numeric(file_info(dir_ls(path("docs/live", .x), recurse = TRUE, type = "file"))$size))
+    )
+  )
+
+shinylive_pool_stats |>
+  pwalk(function(shinylive_pool, apps, package_names, packages, bytes) {
+    cli::cli_alert_info(
+      "{shinylive_pool} pool: {apps} apps, {packages} Wasm packages, {format(round(bytes / 1024^2, 1), trim = TRUE)} MiB"
+    )
+    cli::cli_text("Packages: {paste(package_names, collapse = ', ')}")
+  })
+
 # cards ------------------------------------------------------------------
 cli::cli_h1("Gallery cards")
 
@@ -289,7 +323,7 @@ cards <- apps$app |>
 
     image <- screenshot_generate_and_copy(meta$app, meta$slug)
     launch_url <- if (meta$runtime == "shinylive") {
-      glue("live/{meta$slug}/index.html")
+      glue("live/{meta$shinylive_pool}/{meta$slug}/index.html")
     } else {
       meta$app_url
     }
