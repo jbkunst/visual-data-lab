@@ -23,7 +23,14 @@ theme_vdl <- function(
 
   bslib::bs_add_rules(
     theme,
-    ".tooltip-inner { border: 1px solid #ced4da; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08); }"
+    paste(
+      ".tooltip-inner { border: 1px solid #ced4da; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.08); }",
+      ".bs-tooltip-top .tooltip-arrow::before, .bs-tooltip-auto[data-popper-placement^='top'] .tooltip-arrow::before { filter: drop-shadow(0 1px 0 #ced4da); }",
+      ".bs-tooltip-end .tooltip-arrow::before, .bs-tooltip-auto[data-popper-placement^='right'] .tooltip-arrow::before { filter: drop-shadow(-1px 0 0 #ced4da); }",
+      ".bs-tooltip-bottom .tooltip-arrow::before, .bs-tooltip-auto[data-popper-placement^='bottom'] .tooltip-arrow::before { filter: drop-shadow(0 -1px 0 #ced4da); }",
+      ".bs-tooltip-start .tooltip-arrow::before, .bs-tooltip-auto[data-popper-placement^='left'] .tooltip-arrow::before { filter: drop-shadow(1px 0 0 #ced4da); }",
+      sep = "\n"
+    )
   )
 }
 
