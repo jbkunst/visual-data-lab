@@ -2,9 +2,9 @@
 
 Interactive experiments in data, statistics, machine learning, and visualization.
 
-## Why this exists
+## Motivation
 
-Visual Data Lab is a personal portfolio and a place to learn by building. It brings together subjects I enjoy—statistics, machine learning, data and visualization—in small interactive applications where ideas can be manipulated and explored rather than only described.
+Visual Data Lab is a personal space to build interactive experiments around data, statistics and machine learning. I make them because I enjoy the process and because building things is how I learn best.
 
 Public site:
 
