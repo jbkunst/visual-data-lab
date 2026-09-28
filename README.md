@@ -2,6 +2,10 @@
 
 Interactive experiments in data, statistics, machine learning, and visualization.
 
+## Why this exists
+
+Visual Data Lab is a personal portfolio and a place to learn by building. It brings together subjects I enjoy—statistics, machine learning, data and visualization—in small interactive applications where ideas can be manipulated and explored rather than only described.
+
 Public site:
 
 <https://jbkunst.github.io/visual-data-lab/>
