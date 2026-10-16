@@ -1,0 +1,3 @@
+Title: Fourier Series
+Description: Approximate simple functions on [0, 10], inspect their leading frequency components, and see when additional terms stop adding much reconstruction quality.
+Categories: mathematics, signals, visualization
