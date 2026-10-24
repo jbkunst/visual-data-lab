@@ -8,9 +8,9 @@ This app connects model quality with the variables that create it.
 - **Metric diagnostic** explains the selected quality measure using train and
   test data: individual penalties for log-loss, the ROC curve for AUC, the
   CAP/Lorenz curve for Gini, and cumulative good/bad rates for KS.
-- **Cumulative gains** compares all models on the test sample and highlights the
-  selected model. It shows how many defaults are captured by targeting the
-  riskiest share of the portfolio.
+- **Predicted PD distributions** compare the selected model's test scores for
+  observed defaults and non-defaults. Each class is normalized separately, so
+  their overlap shows how strongly the model separates the two outcomes.
 
 AUC ROC, Gini, and KS are better when higher; log-loss is better when lower.
 Internally, importance uses `1 − AUC ROC` and `1 − KS` so every method receives

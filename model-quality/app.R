@@ -315,35 +315,38 @@ metric_chart <- function(model, metric) {
     ))
 }
 
-gains_chart <- function(selected_model) {
-  curves <- importance_data$diagnostics$gains_curves
-  curves <- curves[curves$sample == "test", ]
-  chart <- highchart() |>
-    hc_chart(type = "line") |>
-    hc_xAxis(title = list(text = "Population targeted"), min = 0, max = 1) |>
-    hc_yAxis(title = list(text = "Defaults captured"), min = 0, max = 1) |>
-    hc_add_series(
-      name = "Random", data = xy_points(c(0, 1), c(0, 1)),
-      color = "#dee2e6", dashStyle = "ShortDash", enableMouseTracking = FALSE
-    )
+score_distribution_chart <- function(selected_model) {
+  values <- importance_data$diagnostics$log_loss_values
+  values <- values[
+    values$model == selected_model & values$sample == "test",
+  ]
+  groups <- list(
+    list(status = 0L, name = "Observed non-default", color = primary_color),
+    list(status = 1L, name = "Observed default", color = danger_color)
+  )
 
-  for (model_name in names(model_labels)) {
-    data <- curves[curves$model == model_name, ]
-    selected <- identical(model_name, selected_model)
+  chart <- highchart() |>
+    hc_chart(type = "area") |>
+    hc_xAxis(title = list(text = "Predicted PD"), min = 0, max = 1) |>
+    hc_yAxis(title = list(text = "Density"), min = 0) |>
+    hc_tooltip(shared = TRUE, valueDecimals = 3) |>
+    hc_plotOptions(area = list(
+      animation = list(duration = 300),
+      fillOpacity = 0.3, lineWidth = 2,
+      marker = list(enabled = FALSE)
+    ))
+
+  for (group in groups) {
+    scores <- values$score[values$status_bad == group$status]
+    estimate <- stats::density(scores, from = 0, to = 1, n = 256)
     chart <- chart |> hc_add_series(
-      id = paste0("gains_", model_name), name = unname(model_labels[[model_name]]),
-      data = xy_points(data$population_fraction, data$positive_fraction),
-      color = if (selected) primary_color else "#ced4da",
-      lineWidth = if (selected) 3 else 1,
-      zIndex = if (selected) 3 else 1
+      name = group$name,
+      data = xy_points(estimate$x, estimate$y),
+      color = group$color
     )
   }
 
-  chart |>
-    hc_tooltip(shared = TRUE, valueDecimals = 3) |>
-    hc_plotOptions(series = list(
-      animation = list(duration = 300), marker = list(enabled = FALSE)
-    ))
+  chart
 }
 
 # ui ---------------------------------------------------------------------
@@ -394,8 +397,8 @@ ui <- page_fillable(
         highchartOutput("metric_plot", height = "100%")),
       card(card_header("SAGE decomposition"),
         highchartOutput("sage_plot", height = "100%")),
-      card(card_header("Cumulative gains · test"),
-        highchartOutput("gains_plot", height = "100%"))
+      card(card_header("Predicted PD distributions · test"),
+        highchartOutput("distribution_plot", height = "100%"))
     )
   )
 )
@@ -447,8 +450,8 @@ server <- function(input, output, session) {
     sage_chart(sage_data(input$model, input$quality_metric), input$quality_metric)
   })
 
-  output$gains_plot <- renderHighchart({
-    gains_chart(input$model)
+  output$distribution_plot <- renderHighchart({
+    score_distribution_chart(input$model)
   })
 }
 
