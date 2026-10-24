@@ -315,38 +315,38 @@ metric_chart <- function(model, metric) {
     ))
 }
 
-score_distribution_chart <- function(selected_model) {
-  values <- importance_data$diagnostics$log_loss_values
-  values <- values[
-    values$model == selected_model & values$sample == "test",
-  ]
-  groups <- list(
-    list(status = 0L, name = "Observed non-default", color = primary_color),
-    list(status = 1L, name = "Observed default", color = danger_color)
+model_comparison_chart <- function(selected_model, metric) {
+  summary <- importance_data$diagnostics$quality_summary
+  summary <- summary[summary$sample == "test", ]
+  summary <- summary[match(names(model_labels), summary$model), ]
+  values <- switch(
+    metric,
+    auc = summary$auc,
+    gini = 2 * summary$auc - 1,
+    log_loss = summary$log_loss,
+    ks = summary$ks
   )
-
-  chart <- highchart() |>
-    hc_chart(type = "area") |>
-    hc_xAxis(title = list(text = "Predicted PD"), min = 0, max = 1) |>
-    hc_yAxis(title = list(text = "Density"), min = 0) |>
-    hc_tooltip(shared = TRUE, valueDecimals = 3) |>
-    hc_plotOptions(area = list(
-      animation = list(duration = 300),
-      fillOpacity = 0.3, lineWidth = 2,
-      marker = list(enabled = FALSE)
-    ))
-
-  for (group in groups) {
-    scores <- values$score[values$status_bad == group$status]
-    estimate <- stats::density(scores, from = 0, to = 1, n = 256)
-    chart <- chart |> hc_add_series(
-      name = group$name,
-      data = xy_points(estimate$x, estimate$y),
-      color = group$color
+  points <- Map(function(model, value) {
+    list(
+      y = value,
+      color = if (identical(model, selected_model)) primary_color else "#ced4da"
     )
-  }
+  }, summary$model, values)
 
-  chart
+  highchart() |>
+    hc_chart(type = "bar") |>
+    hc_xAxis(categories = unname(model_labels[summary$model]), reversed = TRUE) |>
+    hc_yAxis(
+      title = list(text = unname(metric_labels[[metric]])), min = 0,
+      max = if (metric == "log_loss") NULL else 1
+    ) |>
+    hc_legend(enabled = FALSE) |>
+    hc_tooltip(pointFormat = "{point.y:.3f}") |>
+    hc_plotOptions(series = list(
+      animation = list(duration = 300), borderWidth = 0,
+      dataLabels = list(enabled = TRUE, format = "{point.y:.3f}")
+    )) |>
+    hc_add_series(name = unname(metric_labels[[metric]]), data = points)
 }
 
 # ui ---------------------------------------------------------------------
@@ -397,8 +397,8 @@ ui <- page_fillable(
         highchartOutput("metric_plot", height = "100%")),
       card(card_header("SAGE decomposition"),
         highchartOutput("sage_plot", height = "100%")),
-      card(card_header("Predicted PD distributions · test"),
-        highchartOutput("distribution_plot", height = "100%"))
+      card(card_header(uiOutput("comparison_title", class = "d-block w-100")),
+        highchartOutput("comparison_plot", height = "100%"))
     )
   )
 )
@@ -435,6 +435,14 @@ server <- function(input, output, session) {
     )
   })
 
+  output$comparison_title <- renderUI({
+    tags$div(
+      class = "d-flex justify-content-between align-items-center",
+      tags$span("Model comparison · test"),
+      tags$small(unname(metric_labels[[input$quality_metric]]), class = "text-muted")
+    )
+  })
+
   output$permutation_plot <- renderHighchart({
     permutation_chart(
       permutation_data(input$model, input$quality_metric),
@@ -450,8 +458,8 @@ server <- function(input, output, session) {
     sage_chart(sage_data(input$model, input$quality_metric), input$quality_metric)
   })
 
-  output$distribution_plot <- renderHighchart({
-    score_distribution_chart(input$model)
+  output$comparison_plot <- renderHighchart({
+    model_comparison_chart(input$model, input$quality_metric)
   })
 }
 
