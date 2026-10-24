@@ -538,7 +538,7 @@ server <- function(input, output, session) {
     revealed(FALSE)
   }, ignoreInit = TRUE)
 
-  observeEvent(input$next, {
+  observeEvent(input[["next"]], {
     if (!revealed()) return()
 
     if (chapter() == length(scenes)) {
