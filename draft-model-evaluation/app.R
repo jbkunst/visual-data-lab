@@ -6,7 +6,7 @@ library(highcharter)
 library(vdltheme)
 
 # data --------------------------------------------------------------------
-app_dir <- if (file.exists("credit-evaluation.rds")) "." else "model-evaluation"
+app_dir <- if (file.exists("credit-evaluation.rds")) "." else "draft-model-evaluation"
 evaluation_data <- readRDS(file.path(app_dir, "credit-evaluation.rds"))
 model_labels <- evaluation_data$metadata$model_labels
 

@@ -142,7 +142,7 @@ cada punto represente un umbral realmente aplicable.
 **Salida:**
 
 ```text
-model-evaluation/credit-evaluation.rds
+draft-model-evaluation/credit-evaluation.rds
 ```
 
 Contiene predicciones, `threshold_curve`, `gains_curve` y
@@ -173,7 +173,7 @@ Al ejecutar `06-prepare-combined.R` quedan disponibles:
 shap-explorer/shap-credit.rds
 variable-effects/credit-effects.rds
 model-quality/credit-quality.rds
-model-evaluation/credit-evaluation.rds
+draft-model-evaluation/credit-evaluation.rds
 R/credit-data/credit-analysis.rds
 ```
 

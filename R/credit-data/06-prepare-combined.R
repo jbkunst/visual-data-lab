@@ -31,7 +31,7 @@ artifact_paths <- c(
   shap = "shap-explorer/shap-credit.rds",
   effects = "variable-effects/credit-effects.rds",
   importance = "model-quality/credit-quality.rds",
-  evaluation = "model-evaluation/credit-evaluation.rds"
+  evaluation = "draft-model-evaluation/credit-evaluation.rds"
 )
 
 missing_artifacts <- artifact_paths[!file.exists(artifact_paths)]
