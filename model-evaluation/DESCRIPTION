@@ -1,0 +1,5 @@
+Title: Model Evaluation Curve
+Description: Visualize classification model performance using ROC, KS, cumulative gains, and log-loss curves.
+ImageAlt: ROC, KS, cumulative gains, and log-loss charts for a selected classification model.
+Categories: machine learning, model evaluation, credit risk
+ShinylivePool: standard

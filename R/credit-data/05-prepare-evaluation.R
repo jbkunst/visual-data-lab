@@ -151,5 +151,5 @@ evaluation_artifact <- list(
 
 save_credit_artifact(
   evaluation_artifact,
-  "draft-model-evaluation/credit-evaluation.rds"
+  "model-evaluation/credit-evaluation.rds"
 )

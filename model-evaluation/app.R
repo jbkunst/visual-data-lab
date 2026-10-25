@@ -6,7 +6,7 @@ library(highcharter)
 library(vdltheme)
 
 # data --------------------------------------------------------------------
-app_dir <- if (file.exists("credit-evaluation.rds")) "." else "draft-model-evaluation"
+app_dir <- if (file.exists("credit-evaluation.rds")) "." else "model-evaluation"
 evaluation_data <- readRDS(file.path(app_dir, "credit-evaluation.rds"))
 model_labels <- evaluation_data$metadata$model_labels
 
@@ -24,8 +24,71 @@ line_chart <- function(x_title, y_title) {
     ))
 }
 
+metric_header <- function(title, metric, value) {
+  tags$div(
+    class = "d-flex justify-content-between align-items-center",
+    tags$span(title),
+    tags$small(sprintf("Test %s · %.3f", metric, value), class = "text-muted")
+  )
+}
+
+log_loss_chart <- function(values) {
+  pd_grid <- seq(0.005, 0.995, length.out = 200L)
+  probability <- pmin(pmax(values$score, 1e-15), 1 - 1e-15)
+  penalty <- -(
+    values$status_bad * log(probability) +
+      (1 - values$status_bad) * log(1 - probability)
+  )
+
+  highchart() |>
+    hc_chart(type = "line") |>
+    hc_xAxis(title = list(text = "Predicted PD"), min = 0, max = 1) |>
+    hc_yAxis(title = list(text = "Individual log-loss"), min = 0) |>
+    hc_tooltip(
+      headerFormat = "<b>{series.name}</b><br/>",
+      pointFormat = "Predicted PD: {point.x:.3f}<br/>Penalty: {point.y:.3f}"
+    ) |>
+    hc_plotOptions(
+      line = list(animation = list(duration = 300), marker = list(enabled = FALSE)),
+      scatter = list(
+        animation = list(duration = 300),
+        marker = list(radius = 2.5, symbol = "circle"), opacity = 0.35
+      )
+    ) |>
+    hc_add_series(
+      name = "Observed default: -log(PD)",
+      data = xy_points(pd_grid, -log(pd_grid)),
+      color = danger_color, lineWidth = 2, zIndex = 2
+    ) |>
+    hc_add_series(
+      name = "Observed non-default: -log(1 - PD)",
+      data = xy_points(pd_grid, -log(1 - pd_grid)),
+      color = primary_color, lineWidth = 2, zIndex = 2
+    ) |>
+    hc_add_series(
+      id = "log_loss_bad", name = "Default observations", type = "scatter",
+      data = xy_points(
+        values$score[values$status_bad == 1L],
+        penalty[values$status_bad == 1L]
+      ),
+      color = danger_color, opacity = 0.35, zIndex = 3,
+      showInLegend = FALSE
+    ) |>
+    hc_add_series(
+      id = "log_loss_good", name = "Non-default observations", type = "scatter",
+      data = xy_points(
+        values$score[values$status_bad == 0L],
+        penalty[values$status_bad == 0L]
+      ),
+      color = primary_color, opacity = 0.35, zIndex = 3,
+      showInLegend = FALSE
+    )
+}
+
 # ui ---------------------------------------------------------------------
 apptheme <- theme_vdl()
+primary_color <- unname(bs_get_variables(apptheme, "primary"))
+danger_color <- unname(bs_get_variables(apptheme, "danger"))
 sidebar <- purrr::partial(sidebar, width = 300)
 card <- purrr::partial(card, full_screen = TRUE,
   wrapper = purrr::partial(card_body, padding = 0))
@@ -37,14 +100,12 @@ ui <- page_fillable(
   layout_sidebar(
     fillable = TRUE, padding = "0.75rem",
     sidebar = sidebar(
-      title = "Model Evaluation",
+      title = "Model Evaluation Curve",
       radioButtons(
         "model", tags$small("Model"),
         choices = stats::setNames(names(model_labels), model_labels),
         selected = "logistic"
       ),
-      tags$small("Test metrics", class = "text-muted"),
-      uiOutput("model_metrics"),
       accordion(
         open = FALSE,
         accordion_panel(
@@ -56,14 +117,14 @@ ui <- page_fillable(
     ),
     layout_columns(
       col_widths = c(6, 6, 6, 6), row_heights = c(1, 1), gap = "0.75rem",
-      card(card_header("ROC curve"),
+      card(card_header(uiOutput("roc_title", class = "d-block w-100")),
         highchartOutput("roc_plot", height = "100%")),
-      card(card_header("Kolmogorov–Smirnov (KS)"),
+      card(card_header(uiOutput("ks_title", class = "d-block w-100")),
         highchartOutput("ks_plot", height = "100%")),
-      card(card_header("Cumulative gains"),
+      card(card_header(uiOutput("gains_title", class = "d-block w-100")),
         highchartOutput("gains_plot", height = "100%")),
-      card(card_header("Cumulative lift"),
-        highchartOutput("lift_plot", height = "100%"))
+      card(card_header(uiOutput("log_loss_title", class = "d-block w-100")),
+        highchartOutput("log_loss_plot", height = "100%"))
     )
   )
 )
@@ -76,8 +137,11 @@ server <- function(input, output, session) {
     threshold <- threshold_all[is.finite(threshold_all$threshold), ]
     gains <- evaluation_data$gains_curve
     gains <- gains[gains$model == input$model, ]
+    predictions <- evaluation_data$predictions
+    predictions <- predictions[predictions$model == input$model, ]
     summary <- evaluation_data$evaluation_summary
     summary <- summary[summary$model == input$model, ][1L, ]
+    default_rate <- sum(gains$positives) / sum(gains$observations)
 
     list(
       roc = xy_points(
@@ -89,32 +153,30 @@ server <- function(input, output, session) {
       ks_gap = xy_points(threshold$threshold, threshold$ks_gap),
       ks_threshold = summary$ks_threshold,
       gains = xy_points(gains$population_fraction, gains$positive_fraction),
-      lift = xy_points(
-        gains$population_fraction[is.finite(gains$lift)],
-        gains$lift[is.finite(gains$lift)]
-      ),
+      perfect_gains = xy_points(c(0, default_rate, 1), c(0, 1, 1)),
+      predictions = predictions,
       summary = summary
     )
   })
 
-  output$model_metrics <- renderUI({
+  output$roc_title <- renderUI({
     metrics <- chart_data()$summary
-    labels <- c("Log-loss", "AUC", "Gini", "KS")
-    values <- sprintf("%.3f", unlist(metrics[c("log_loss", "auc", "gini", "ks")]))
+    metric_header("ROC curve", "AUC", metrics$auc)
+  })
 
-    div(
-      class = "border rounded p-2",
-      div(
-        class = "row g-2",
-        lapply(seq_along(labels), function(i) {
-          div(
-            class = "col-6",
-            tags$small(labels[[i]], class = "text-muted"),
-            div(values[[i]])
-          )
-        })
-      )
-    )
+  output$ks_title <- renderUI({
+    metrics <- chart_data()$summary
+    metric_header("Kolmogorov–Smirnov", "KS", metrics$ks)
+  })
+
+  output$gains_title <- renderUI({
+    metrics <- chart_data()$summary
+    metric_header("CAP / cumulative gains", "Gini", metrics$gini)
+  })
+
+  output$log_loss_title <- renderUI({
+    metrics <- chart_data()$summary
+    metric_header("Log-loss penalty", "log-loss", metrics$log_loss)
   })
 
   output$roc_plot <- renderHighchart({
@@ -168,20 +230,17 @@ server <- function(input, output, session) {
         id = "gains_reference", name = "Random",
         data = xy_points(c(0, 1), c(0, 1)), color = "#adb5bd",
         dashStyle = "ShortDash", enableMouseTracking = FALSE
+      ) |>
+      hc_add_series(
+        id = "gains_perfect", name = "Perfect", data = data$perfect_gains,
+        color = "#dee2e6", dashStyle = "ShortDot",
+        enableMouseTracking = FALSE
       )
   })
 
-  output$lift_plot <- renderHighchart({
+  output$log_loss_plot <- renderHighchart({
     data <- isolate(chart_data())
-    line_chart("Population targeted", "Lift") |>
-      hc_yAxis(plotLines = list(list(
-        value = 1, color = "#adb5bd", width = 1,
-        dashStyle = "ShortDash", zIndex = 3
-      ))) |>
-      hc_add_series(
-        id = "lift", name = "Model", data = data$lift,
-        lineWidth = 3
-      )
+    log_loss_chart(data$predictions)
   })
 
   observeEvent(input$model, {
@@ -198,9 +257,29 @@ server <- function(input, output, session) {
       hcpxy_update_series(id = "ks_fpr", data = data$ks_fpr) |>
       hcpxy_update_series(id = "ks_gap", data = data$ks_gap)
     highchartProxy("gains_plot") |>
-      hcpxy_update_series(id = "gains", data = data$gains)
-    highchartProxy("lift_plot") |>
-      hcpxy_update_series(id = "lift", data = data$lift)
+      hcpxy_update_series(id = "gains", data = data$gains) |>
+      hcpxy_update_series(id = "gains_perfect", data = data$perfect_gains)
+
+    probability <- pmin(pmax(data$predictions$score, 1e-15), 1 - 1e-15)
+    penalty <- -(
+      data$predictions$status_bad * log(probability) +
+        (1 - data$predictions$status_bad) * log(1 - probability)
+    )
+    highchartProxy("log_loss_plot") |>
+      hcpxy_update_series(
+        id = "log_loss_bad",
+        data = xy_points(
+          data$predictions$score[data$predictions$status_bad == 1L],
+          penalty[data$predictions$status_bad == 1L]
+        )
+      ) |>
+      hcpxy_update_series(
+        id = "log_loss_good",
+        data = xy_points(
+          data$predictions$score[data$predictions$status_bad == 0L],
+          penalty[data$predictions$status_bad == 0L]
+        )
+      )
   }, ignoreInit = TRUE)
 }
 
