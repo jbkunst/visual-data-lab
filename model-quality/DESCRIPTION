@@ -1,5 +1,5 @@
-Title: Model Quality Explorer
-Description: Explore how variables build or reduce credit-model quality through permutation, SAGE, metric diagnostics, and cumulative gains.
-ImageAlt: A credit-model quality dashboard with metric diagnostics and cumulative gains charts.
+Title: Model Performance Decomposition
+Description: Decompose credit-model performance by variable using permutation and SAGE, with diagnostics for AUC, Gini, log-loss, and KS.
+ImageAlt: A credit-model performance dashboard with permutation importance, metric diagnostics, and SAGE decomposition.
 Categories: machine learning, explainability, credit risk
 ShinylivePool: standard

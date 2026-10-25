@@ -1,39 +1,13 @@
-This app connects model quality with the variables that create it.
+This app decomposes the selected model's test performance by variable.
 
 - **Permutation loss** compares the selected model's test loss with its loss
   after one variable is shuffled. A larger deterioration means that the model
   relies more strongly on that variable.
-- **SAGE decomposition** starts with no aligned variables and attributes the
-  reduction in test loss across variables, ending at the full model.
 - **Metric diagnostic** explains the selected quality measure using train and
   test data: individual penalties for log-loss, the ROC curve for AUC, the
   CAP/Lorenz curve for Gini, and cumulative good/bad rates for KS.
-- **Model comparison** shows the selected quality metric for every model on the
-  test sample and highlights the active model.
+- **SAGE decomposition** averages many variable orders and assigns each
+  variable a share of the change from the shuffled baseline to the full model.
 
-AUC ROC, Gini, and KS are better when higher; log-loss is better when lower.
-Internally, importance uses `1 − AUC ROC` and `1 − KS` so every method receives
-a loss, but the app translates the results back to the selected quality metric.
-The Gini diagnostic uses the CAP/Lorenz view and compares the observed model
-with random and perfect selection.
-
-The log-loss diagnostic shows the penalty attached to every predicted PD. For
-an observed default the penalty is `-log(PD)`; for an observed non-default it is
-`-log(1 - PD)`. Points high on either curve are confidently wrong predictions.
-They may be difficult cases, data errors, distribution shift, or overconfident
-model behavior and should be investigated rather than automatically discarded.
-
-Permutation and this marginal Monte Carlo approximation of SAGE can create
-unlikely profiles when values from different clients are combined. This matters
-most when predictors are strongly correlated. SAGE contributions are displayed
-from largest to smallest, but each contribution already averages many possible
-variable orders.
-
-The SAGE starting point is estimated from independently shuffled profiles. It
-therefore approximates a random model rather than forcing a theoretical value;
-small differences across models are Monte Carlo variation.
-
-References: [Permutation feature importance](https://christophm.github.io/interpretable-ml-book/feature-importance.html),
-[SAGE](https://github.com/iancovert/sage),
-[ROC and AUC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic),
-and [Kolmogorov–Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test).
+AUC, Gini, and KS are better when higher; log-loss is better when lower.
+Correlated variables may share their contribution between them.

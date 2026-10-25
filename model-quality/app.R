@@ -37,13 +37,15 @@ metric_spec <- function(metric) {
   )
 }
 
+importance_rows <- function(model, method, metric) {
+  values <- importance_data$importance_values
+  keep <- values$model == model & values$method == method & values$metric == metric
+  values[keep, ]
+}
+
 permutation_data <- function(model, metric) {
   spec <- metric_spec(metric)
-  values <- importance_data$importance_values
-  values <- values[
-    values$model == model & values$method == "permutation" &
-      values$metric == spec$loss,
-  ]
+  values <- importance_rows(model, "permutation", spec$loss)
   summary <- stats::aggregate(
     cbind(loss_before, loss_after, importance) ~ variable,
     values, mean
@@ -103,10 +105,7 @@ permutation_chart <- function(data, metric) {
 
 sage_data <- function(model, metric) {
   spec <- metric_spec(metric)
-  values <- importance_data$importance_values
-  values <- values[
-    values$model == model & values$method == "sage" & values$metric == spec$loss,
-  ]
+  values <- importance_rows(model, "sage", spec$loss)
   summary <- stats::aggregate(importance ~ variable, values, mean)
   summary <- summary[order(summary$importance, decreasing = TRUE), ]
   start <- spec$transform(mean(values$loss_before[values$position == 1L]))
@@ -315,40 +314,6 @@ metric_chart <- function(model, metric) {
     ))
 }
 
-model_comparison_chart <- function(selected_model, metric) {
-  summary <- importance_data$diagnostics$quality_summary
-  summary <- summary[summary$sample == "test", ]
-  summary <- summary[match(names(model_labels), summary$model), ]
-  values <- switch(
-    metric,
-    auc = summary$auc,
-    gini = 2 * summary$auc - 1,
-    log_loss = summary$log_loss,
-    ks = summary$ks
-  )
-  points <- Map(function(model, value) {
-    list(
-      y = value,
-      color = if (identical(model, selected_model)) primary_color else "#ced4da"
-    )
-  }, summary$model, values)
-
-  highchart() |>
-    hc_chart(type = "bar") |>
-    hc_xAxis(categories = unname(model_labels[summary$model]), reversed = TRUE) |>
-    hc_yAxis(
-      title = list(text = unname(metric_labels[[metric]])), min = 0,
-      max = if (metric == "log_loss") NULL else 1
-    ) |>
-    hc_legend(enabled = FALSE) |>
-    hc_tooltip(pointFormat = "{point.y:.3f}") |>
-    hc_plotOptions(series = list(
-      animation = list(duration = 300), borderWidth = 0,
-      dataLabels = list(enabled = TRUE, format = "{point.y:.3f}")
-    )) |>
-    hc_add_series(name = unname(metric_labels[[metric]]), data = points)
-}
-
 # ui ---------------------------------------------------------------------
 apptheme <- theme_vdl()
 primary_color <- unname(bs_get_variables(apptheme, "primary"))
@@ -364,19 +329,20 @@ ui <- page_fillable(
   layout_sidebar(
     fillable = TRUE, padding = "0.75rem",
     sidebar = sidebar(
-      title = "Model Quality Explorer",
+      title = "Model Performance Decomposition",
       radioButtons(
         "model", tags$small("Model"),
         choices = stats::setNames(names(model_labels), model_labels),
         selected = "logistic"
       ),
-      selectInput(
+      radioButtons(
         "quality_metric",
         input_label_vdl(
           "Model quality metric",
           "Controls permutation, SAGE, and the metric-specific diagnostic."
         ),
-        choices = stats::setNames(names(metric_labels), metric_labels)
+        choices = stats::setNames(names(metric_labels), metric_labels),
+        selected = "auc"
       ),
       accordion(
         open = FALSE,
@@ -388,7 +354,7 @@ ui <- page_fillable(
       tags$small(htmltools::includeMarkdown("credits.md"))
     ),
     layout_columns(
-      col_widths = c(6, 6, 6, 6), row_heights = c(1, 1), gap = "0.75rem",
+      col_widths = c(6, 6, 12), row_heights = c(1, 1), gap = "0.75rem",
       card(card_header(uiOutput(
         "permutation_title", class = "d-block w-100"
       )),
@@ -396,9 +362,7 @@ ui <- page_fillable(
       card(card_header(uiOutput("metric_title", class = "d-block w-100")),
         highchartOutput("metric_plot", height = "100%")),
       card(card_header("SAGE decomposition"),
-        highchartOutput("sage_plot", height = "100%")),
-      card(card_header(uiOutput("comparison_title", class = "d-block w-100")),
-        highchartOutput("comparison_plot", height = "100%"))
+        highchartOutput("sage_plot", height = "100%"))
     )
   )
 )
@@ -435,14 +399,6 @@ server <- function(input, output, session) {
     )
   })
 
-  output$comparison_title <- renderUI({
-    tags$div(
-      class = "d-flex justify-content-between align-items-center",
-      tags$span("Model comparison · test"),
-      tags$small(unname(metric_labels[[input$quality_metric]]), class = "text-muted")
-    )
-  })
-
   output$permutation_plot <- renderHighchart({
     permutation_chart(
       permutation_data(input$model, input$quality_metric),
@@ -458,9 +414,6 @@ server <- function(input, output, session) {
     sage_chart(sage_data(input$model, input$quality_metric), input$quality_metric)
   })
 
-  output$comparison_plot <- renderHighchart({
-    model_comparison_chart(input$model, input$quality_metric)
-  })
 }
 
 shinyApp(ui, server)
