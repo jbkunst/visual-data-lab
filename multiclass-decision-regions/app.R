@@ -697,8 +697,9 @@ server <- function(input, output, session) {
     )
   })
   output$axis_labels <- renderUI({
+    if (!input$scenario %in% c("iris", "penguins")) return(NULL)
     labels <- attr(data(), "axis_labels")
-    tags$small(sprintf("Axes: %s × %s", labels[1], labels[2]))
+    tags$small(sprintf("%s × %s", labels[1], labels[2]))
   })
   output$surface_note <- renderUI({
     if (input$surface_view == "class") {
