@@ -1,6 +1,7 @@
 # packages ----------------------------------------------------------------
 library(shiny)
 library(bslib)
+library(markdown)
 library(vdltheme)
 
 # theme -------------------------------------------------------------------
