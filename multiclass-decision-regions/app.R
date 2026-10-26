@@ -394,7 +394,9 @@ draw_comparison <- function(scores, fit_time, predict_time, predictions, labels,
   old <- par(mfrow = c(2, 2), mar = c(6, 5, 2.5, 0.8), cex = 0.85)
   on.exit(par(old))
 
-  colors <- hcl.colors(length(labels), "Dark 3")
+  model_colors <- hcl.colors(length(labels), "Dark 3")
+  time_colors <- unname(class_palette[1:2])
+  value_colors <- colorRampPalette(c("#f8f9fa", "#9ecae1", class_palette[2]))(12)
   xlim <- pmax(0, pmin(1, extendrange(score[, c("train", "test")], f = 0.12)))
   ylim <- pmax(0, pmin(1, extendrange(score[, c("train_f1", "test_f1")], f = 0.12)))
   plot(
@@ -402,29 +404,48 @@ draw_comparison <- function(scores, fit_time, predict_time, predictions, labels,
     xlab = "Accuracy", ylab = "Macro-F1", main = "Train → test performance"
   )
   abline(0, 1, col = "#ced4da", lty = 3)
-  segments(score[, "train"], score[, "train_f1"], score[, "test"], score[, "test_f1"], col = colors)
-  points(score[, "train"], score[, "train_f1"], pch = 16, col = colors, cex = 1.2)
-  points(score[, "test"], score[, "test_f1"], pch = 16, col = adjustcolor(colors, 0.35), cex = 1.2)
+  segments(
+    score[, "train"], score[, "train_f1"], score[, "test"], score[, "test_f1"],
+    col = adjustcolor(model_colors, 0.55)
+  )
+  points(
+    score[, "train"], score[, "train_f1"],
+    pch = 1, lwd = 1.4, col = model_colors, cex = 1.2
+  )
+  points(
+    score[, "test"], score[, "test_f1"],
+    pch = 16, col = model_colors, cex = 1.2
+  )
+  label_y <- seq(
+    ylim[1] + 0.05 * diff(ylim),
+    ylim[2] - 0.05 * diff(ylim),
+    length.out = nrow(score)
+  )[rank(score[, "test_f1"], ties.method = "first")]
+  segments(
+    score[, "test"], score[, "test_f1"], score[, "test"], label_y,
+    col = adjustcolor(model_colors, 0.45), lty = 3
+  )
   text(
-    score[, "test"], score[, "test_f1"], labels,
-    pos = ifelse(score[, "test"] > mean(xlim), 2, 4), col = colors, cex = 0.65
+    score[, "test"], label_y, labels,
+    pos = ifelse(score[, "test"] > mean(xlim), 2, 4),
+    col = model_colors, cex = 0.65
   )
   legend(
-    "bottomleft", c("Train", "Test"), pch = 16,
-    col = c("#343a40", adjustcolor("#343a40", 0.35)), bty = "n"
+    "bottomleft", c("Train", "Test"), pch = c(1, 16),
+    col = "#343a40", pt.lwd = 1.4, bty = "n"
   )
 
   barplot(
     1000 * rbind(fit = fit_time, predict = predict_time),
-    beside = TRUE, names.arg = labels, col = c("#56B4E9", "#E69F00"), las = 2,
+    beside = TRUE, names.arg = labels, col = time_colors, las = 2,
     ylab = "Milliseconds", main = "Execution time"
   )
-  legend("topleft", c("Fit", "Predict grid"), fill = c("#56B4E9", "#E69F00"), bty = "n")
+  legend("topleft", c("Fit", "Predict grid"), fill = time_colors, bty = "n")
 
   recall <- score[, paste0("recall_", classes), drop = FALSE]
   image(
     seq_len(nrow(recall)), seq_len(ncol(recall)), recall,
-    col = hcl.colors(10, "BluYl"), zlim = c(0, 1), axes = FALSE,
+    col = value_colors, zlim = c(0, 1), axes = FALSE,
     xlab = "", ylab = "", main = "Test recall by class"
   )
   axis(1, seq_along(labels), labels, las = 2)
@@ -432,7 +453,8 @@ draw_comparison <- function(scores, fit_time, predict_time, predictions, labels,
   text(
     rep(seq_len(nrow(recall)), ncol(recall)),
     rep(seq_len(ncol(recall)), each = nrow(recall)),
-    sprintf("%.0f", 100 * recall), cex = 0.7
+    sprintf("%.0f", 100 * recall),
+    col = ifelse(recall > 0.65, "white", "#343a40"), cex = 0.7
   )
 
   agreement <- vapply(predictions, function(reference) {
@@ -440,7 +462,7 @@ draw_comparison <- function(scores, fit_time, predict_time, predictions, labels,
   }, numeric(length(predictions)))
   image(
     seq_along(labels), seq_along(labels), agreement,
-    col = hcl.colors(10, "BluYl"), zlim = c(0, 1), axes = FALSE,
+    col = value_colors, zlim = c(0, 1), axes = FALSE,
     xlab = "", ylab = "", main = "Agreement on prediction grid"
   )
   axis(1, seq_along(labels), labels, las = 2)
@@ -448,7 +470,8 @@ draw_comparison <- function(scores, fit_time, predict_time, predictions, labels,
   text(
     rep(seq_along(labels), length(labels)),
     rep(seq_along(labels), each = length(labels)),
-    sprintf("%.0f", 100 * agreement), cex = 0.55
+    sprintf("%.0f", 100 * agreement),
+    col = ifelse(agreement > 0.65, "white", "#343a40"), cex = 0.55
   )
 }
 
@@ -481,6 +504,26 @@ model_grid <- function(order = names(models)) {
 ui <- page_fillable(
   theme = apptheme,
   padding = 0,
+  tags$head(tags$style(HTML("\
+    .modal-dialog.modal-xl {\
+      width: calc(100vw - 2rem);\
+      max-width: calc(100vw - 2rem);\
+      margin: 1rem auto;\
+    }\
+    .modal-dialog.modal-xl .modal-content {\
+      height: calc(100vh - 2rem);\
+    }\
+    .modal-dialog.modal-xl .modal-body {\
+      display: flex;\
+      min-height: 0;\
+      padding: .75rem 1rem;\
+    }\
+    .modal-dialog.modal-xl #comparison_plot {\
+      flex: 1 1 auto;\
+      height: 100% !important;\
+      min-height: 0;\
+    }\
+  "))),
   layout_sidebar(
     fillable = TRUE,
     padding = "0.75rem",
@@ -528,6 +571,14 @@ ui <- page_fillable(
 server <- function(input, output, session) {
   seed <- reactiveVal(2026L)
   observeEvent(input$resample, seed(seed() + 1L))
+  observe({
+    label <- if (input$scenario %in% c("iris", "penguins")) {
+      "New split"
+    } else {
+      "New sample"
+    }
+    updateActionButton(session, "resample", label = label)
+  })
   data <- reactive(make_data(input$scenario, input$n, seed()))
   fits <- reactive({
     train <- data()[data()$partition == "train", c("x1", "x2", "class")]
@@ -616,8 +667,8 @@ server <- function(input, output, session) {
   output$model_grid <- renderUI(model_grid(card_order()))
 
   observeEvent(input$compare, showModal(modalDialog(
-    title = "Compare models",
-    plotOutput("comparison_plot", height = 720),
+    title = "Model comparison",
+    plotOutput("comparison_plot", height = "100%"),
     size = "xl", easyClose = TRUE, footer = modalButton("Close")
   )))
 
