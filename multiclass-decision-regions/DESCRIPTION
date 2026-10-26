@@ -3,4 +3,4 @@ Description: Compare how nine multiclass classifiers divide a two-dimensional sp
 ImageAlt: Nine multiclass decision maps comparing predicted regions and confidence across classifiers.
 Categories: machine learning, classification, visualization
 Runtime: server
-Status: draft
+AppURL: https://jbkunst-multiclass-decision-regions.share.connect.posit.cloud
