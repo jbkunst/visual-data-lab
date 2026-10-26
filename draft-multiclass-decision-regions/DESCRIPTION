@@ -1,0 +1,5 @@
+Title: Multiclass Decision Regions
+Description: Compare how nine multiclass classifiers divide a two-dimensional space and express confidence.
+ImageAlt: Nine multiclass decision maps comparing predicted regions and confidence across classifiers.
+Categories: machine learning, classification, visualization
+Status: draft
