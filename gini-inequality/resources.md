@@ -1,0 +1,3 @@
+- [shinymodist](https://jkunst.com/shinymodist/)
+- [Beta distribution Gini formula](https://search.r-project.org/CRAN/refmans/giniVarCI/html/gbeta.html)
+- R documentation: `Lognormal`, `GammaDist`, `Exponential`, and `Beta`.
