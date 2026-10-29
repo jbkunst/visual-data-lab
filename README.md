@@ -104,7 +104,7 @@ Adding a new app should be self-contained in its app folder. **Do not modify `.g
 Every app `credits.md` should use the standard signature:
 
 ```md
-App made by [Joshua Kunst](https://jkunst.com) with ❤️ and ☕ using Shiny for R ✨. Code [here](https://github.com/jbkunst/visual-data-lab).
+App made by [Joshua Kunst](https://jkunst.com) with ❤️, ☕ and 🤖 using Shiny ✨. Code [here](https://github.com/jbkunst/visual-data-lab).
 ```
 
 Generate a gallery screenshot locally with:
