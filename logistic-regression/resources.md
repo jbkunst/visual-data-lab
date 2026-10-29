@@ -1,1 +1,2 @@
-- https://lisyarus.github.io/webgl/classification.html
+- [Interactive classification examples](https://lisyarus.github.io/webgl/classification.html)
+- R documentation: `stats::glm()`.

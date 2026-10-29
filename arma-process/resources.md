@@ -1,0 +1,1 @@
+- R documentation: `stats::arima.sim()` and `stats::ARMAacf()`.

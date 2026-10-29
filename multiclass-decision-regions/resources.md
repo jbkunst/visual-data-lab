@@ -1,0 +1,2 @@
+- [Da Silva, Cook, and Lee (2021): PPforest](https://doi.org/10.1080/10618600.2020.1814300)
+- [TensorFlow Playground](https://playground.tensorflow.org/)

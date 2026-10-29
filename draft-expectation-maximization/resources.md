@@ -1,0 +1,1 @@
+- R documentation: `stats::dnorm()` for Gaussian component densities.

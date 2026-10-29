@@ -1,0 +1,1 @@
+- R documentation: `igraph::degree()`, `igraph::betweenness()`, and `igraph::cluster_louvain()`.

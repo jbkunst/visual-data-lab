@@ -16,4 +16,6 @@ When editing apps:
 - Make small, reviewable changes.
 - Avoid clever workarounds for fragile browser behavior; stop and report tradeoffs.
 - Use `readme.md` for "How it works", optional `resources.md` for references, and `credits.md` for the visible signature.
+- Keep every app's "How it works" to one or two short paragraphs, at most 80 words, explaining what to change and observe. No headings, lists, derivations, implementation details, or deployment instructions.
+- Keep "Resources" / "Inspiration and resources" equally small: at most four references and 60 words in `resources.md`. Include only useful links or citations, not explanations or technical notes. Never move an oversized "How it works" into "Resources"; shorten or remove the excess. Both limits apply to all existing and new apps.
 - Put explanatory markdown inside an accordion before credits.

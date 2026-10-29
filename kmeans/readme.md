@@ -1,7 +1,3 @@
-This app shows how the K-means algorithm updates cluster assignments through its internal iterations.
+Change the number of clusters and step through K-means iterations. Point shapes identify generated groups, colors show assigned clusters, and large points mark cluster centers.
 
-The main chart shows simulated groups by shape, assigned clusters by color, cluster centers as large points, and Voronoi boundaries around the current centers.
-
-The generated-vs-assigned heatmap compares the original simulated groups with the clusters found by K-means. It is not a confusion matrix, because K-means cluster labels are arbitrary.
-
-The charts below summarize within-cluster variation, convergence over iterations, and the final elbow curve for different values of \\(k\\).
+Compare the generated-versus-assigned heatmap, within-cluster variation, convergence, and elbow curve. Cluster labels are arbitrary, so the heatmap is not a classification confusion matrix.

@@ -1,0 +1,1 @@
+- R documentation: `lme4::lmer()` and `lme4::isSingular()`.

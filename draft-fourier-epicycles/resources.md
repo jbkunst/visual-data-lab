@@ -1,0 +1,2 @@
+- [The Coding Train: Fourier epicycles](https://thecodingtrain.com/challenges/130-drawing-with-fourier-transform-and-epicycles/)
+- [3Blue1Brown: Fourier series](https://www.3blue1brown.com/lessons/fourier-series)

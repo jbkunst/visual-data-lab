@@ -1,0 +1,1 @@
+- [klassets: Quasi-Anscombe datasets](https://github.com/jbkunst/klassets)

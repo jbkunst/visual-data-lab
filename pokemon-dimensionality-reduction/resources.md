@@ -1,0 +1,3 @@
+- [PokeAPI data](https://github.com/PokeAPI/pokeapi)
+- [PokeAPI sprites and artwork](https://github.com/PokeAPI/sprites)
+- [Original Pokemon flexdashboard](https://jkunst.com/flexdashboard-highcharter-examples/pokemon/)

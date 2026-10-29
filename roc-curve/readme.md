@@ -1,5 +1,3 @@
-This app shows how two score distributions and a classification threshold determine model performance. Scores at or above the threshold are predicted as positive; the colored regions correspond to true negatives, false positives, false negatives, and true positives.
+Change the two score distributions and threshold to explore classification performance. Scores at or above the threshold are predicted positive; colored regions show correct and incorrect decisions.
 
-**Theoretical** uses normal probability distributions to show population-level results. **Simulated** draws a reproducible sample and produces empirical densities, a stepwise ROC curve, and observed confusion-matrix counts. Changing the number of observations makes sampling variability easier to see.
-
-The ROC curve compares the true positive rate with the false positive rate across all possible thresholds. Moving the threshold changes the current operating point and the metrics, but not the underlying sample.
+Switch between theoretical results and a reproducible sample. Compare ROC, confusion counts, and threshold metrics. Moving the threshold changes the operating point but preserves the sample; changing sample size reveals sampling variability.

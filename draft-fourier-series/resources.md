@@ -1,0 +1,2 @@
+- [3Blue1Brown: Fourier series](https://www.3blue1brown.com/lessons/fourier-series)
+- R documentation: `stats::fft()`.

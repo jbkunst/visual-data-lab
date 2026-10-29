@@ -1,7 +1,3 @@
-Networks with the same number of nodes can behave very differently because their connections are organized differently.
+Choose a network structure and change its parameters. Node size shows degree; colors show detected communities. Click a node to inspect its connections and centrality.
 
-Use the examples to compare paths, rings, hubs, random links, small-world shortcuts, preferential attachment, and planted communities. Node size represents degree, while color represents communities detected with the Louvain algorithm.
-
-Click a node to highlight its immediate neighbours and inspect degree, betweenness, and local clustering. ForceAtlas2 changes only the drawing: it moves nodes to reveal structure, but it does not change the network itself.
-
-For planted communities, the Adjusted Rand Index compares the known groups with the detected groups. A value near 1 indicates strong recovery; a value near 0 indicates little agreement beyond chance.
+Compare paths, hubs, shortcuts, and planted groups. ForceAtlas2 changes the drawing, not the network. For planted communities, ARI measures agreement between the known and detected groups.

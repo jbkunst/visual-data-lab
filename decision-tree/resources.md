@@ -1,2 +1,2 @@
-- http://www.r2d3.us/visual-intro-to-machine-learning-part-1/
-- https://mlu-explain.github.io/decision-tree/
+- [A visual introduction to machine learning](http://www.r2d3.us/visual-intro-to-machine-learning-part-1/)
+- [MLU-Explain: decision trees](https://mlu-explain.github.io/decision-tree/)

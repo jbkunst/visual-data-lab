@@ -1,0 +1,1 @@
+- R documentation: `stats::pnorm()` and `stats::rnorm()`.

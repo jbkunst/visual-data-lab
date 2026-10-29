@@ -204,6 +204,14 @@ The shared package is the source of truth for the common visual language:
 - Keep labels and educational copy short. Put the app explanation in a closed
   accordion before `credits.md`, using `readme.md` for "How it works" and
   optional `resources.md` for references.
+- Every app's "How it works" must be one or two short paragraphs, at most
+  80 words, focused on what to change and observe. No headings, lists,
+  derivations, implementation details, or deployment instructions.
+- "Resources" / "Inspiration and resources" must also stay small: at most
+  four references and 60 words in `resources.md`. Use useful links or citations
+  only, without explanations or technical notes. Never relocate an oversized
+  "How it works" into "Resources"; shorten or remove the excess. Both limits
+  apply to every existing app and every new app.
 
 For Posit Connect Cloud, install the tagged package locally before regenerating
 the app manifest. Do not install packages from inside `app.R`:

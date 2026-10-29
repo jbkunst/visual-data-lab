@@ -1,0 +1,2 @@
+- [Interpretable Machine Learning](https://christophm.github.io/interpretable-ml-book/index.html)
+- [Accumulated local effects](https://en.wikipedia.org/wiki/Accumulated_local_effects)

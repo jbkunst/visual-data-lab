@@ -1,0 +1,1 @@
+- Edward Lorenz (1963), *Deterministic Nonperiodic Flow*.

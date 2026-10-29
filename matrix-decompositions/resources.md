@@ -1,0 +1,1 @@
+- R documentation: `base::svd()`, `base::eigen()`, `base::qr()`, `base::chol()`, and `stats::prcomp()`.
