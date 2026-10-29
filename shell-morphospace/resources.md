@@ -1,0 +1,2 @@
+- [Raup & Michelson (1965), Theoretical morphology of the coiled shell](https://pubmed.ncbi.nlm.nih.gov/17790826/)
+- [Raup's coiling model, equations and parameters](https://doc.ktch.dev/stable/explanation/coiling/)
