@@ -53,17 +53,17 @@ ui <- page_fillable(
       selectInput("preset", "Start with a shape", choices = names(presets)),
       sliderInput(
         "w",
-        input_label_vdl("Expansion (W)", "Aperture size multiplies by W each turn. Higher values create a rapidly flaring shell."),
+        input_label_vdl("Expansion \\(W\\)", "Aperture size multiplies by W each turn. Higher values create a rapidly flaring shell."),
         min = 1.5, max = 100, value = 3, step = 0.5, ticks = FALSE
       ),
       sliderInput(
         "d",
-        input_label_vdl("Distance from axis (D)", "Moves the aperture away from the coiling axis. Higher values open a gap between the whorls."),
+        input_label_vdl("Distance from axis \\(D\\)", "Moves the aperture away from the coiling axis. Higher values open a gap between the whorls."),
         min = 0, max = 0.85, value = 0.05, step = 0.05, ticks = FALSE
       ),
       sliderInput(
         "t",
-        input_label_vdl("Translation (T)", "Moves the growing aperture along the vertical axis. Zero gives a flat coil; higher values create a spire."),
+        input_label_vdl("Translation \\(T\\)", "Moves the growing aperture along the vertical axis. Zero gives a flat coil; higher values create a spire."),
         min = 0, max = 3, value = 0, step = 0.05, ticks = FALSE
       ),
       tags$small(class = "text-muted", "Drag to rotate. Scroll to zoom. Projections show the surface as a wireframe."),
