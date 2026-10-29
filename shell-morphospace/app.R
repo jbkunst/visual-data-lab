@@ -87,7 +87,7 @@ ui <- page_fillable(
       col_widths = c(12, 4, 4, 4),
       row_heights = c(3, 2),
       gap = "0.75rem",
-      card(card_header("3D shell"), plotlyOutput("shell3d", height = "100%")),
+      card(card_header("3D form"), plotlyOutput("shell3d", height = "100%")),
       card(card_header("X-Y projection"), plotOutput("xy", height = "100%")),
       card(card_header("X-Z projection"), plotOutput("xz", height = "100%")),
       card(card_header("Y-Z projection"), plotOutput("yz", height = "100%"))
