@@ -11,6 +11,7 @@ listing:
     contents: apps.yml
     type: grid
     grid-columns: 3
+    page-size: 1000
     sort-ui: false
     filter-ui: true
     categories: true
