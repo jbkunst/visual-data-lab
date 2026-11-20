@@ -32,7 +32,7 @@ region_palette <- c(
 threshold_color <- "#D9A441"
 
 options(
-  highcharter.theme = hc_theme_smpl(
+  highcharter.theme = hc_theme("smpl",
     exporting = list(enabled = FALSE),
     credits = list(enabled = FALSE),
     legend = list(itemStyle = list(fontWeight = "normal")),

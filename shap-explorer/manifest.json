@@ -735,32 +735,41 @@
       }
     },
     "highcharter": {
-      "Source": "CRAN",
-      "Repository": "https://cloud.r-project.org",
+      "Source": "github",
+      "Repository": null,
       "description": {
         "Package": "highcharter",
         "Type": "Package",
-        "Version": "0.9.5",
+        "Version": "0.12.6.1",
         "Title": "A Wrapper for the 'Highcharts' Library",
-        "Description": "A wrapper for the 'Highcharts' library including\n    shortcut functions to plot R objects. 'Highcharts'\n    <https://www.highcharts.com/> is a charting library offering\n    numerous chart types with a simple configuration syntax.",
-        "Authors@R": "c(\n  person(\"Joshua\", \"Kunst\", role = c(\"aut\", \"cre\"), email = \"jbkunst@gmail.com\"),\n  person(\"Nuno\", \"Agostinho\", role = c(\"ctb\"), comment  = \"hchart.survfit, densities and hc_add_series_scatter\"),\n  person(\"Danton\", \"Noriega\", role = c(\"ctb\"), comment  = \"hcaes_\"),\n  person(\"Martin John \", \"Hadley\", role = c(\"ctb\"), comment  = \"hc_add_event_point improvement\"),\n  person(\"Eduardo\", \"Flores\", role = c(\"ctb\"), comment  = \"First version hc_add_series_df_tidy\"),\n  person(\"Dean\", \"Kilfoyle\", role = c(\"ctb\"), comment  = \"First version hc_add_series_boxplot\"),\n  person(\"Adline\", \"Dsilva\", role = c(\"ctb\"), comment  = \"First version Matrix heatmap\"),\n  person(\"Kamil\", \"Slowikowski\", role = c(\"ctb\"), comment = c(ORCID = \"0000-0002-2843-6370\")),\n  person(\"Christian\", \"Minich\", role = c(\"ctb\"), comment  = \"hcaes mutate_mapping improvement\"),\n  person(\"Jonathan\", \"Armond\", role = c(\"ctb\"), comment = \"mutate_mapping bugfix\"),\n  person(\"David\", \"Breuer\", role = c(\"ctb\"), comment = \"download_map_data quiet parameter\"),\n  person(\"Mauricio\", \"Vargas\", role = c(\"ctb\"), comment = \"tests and gh-actions\"),\n  person(\"Michael\", \"Yan\", role = c(\"ctb\"), comment = \"Motivational example for treemap/sunburst data helper\"),\n  person(\"Bart\", \"Oortwijn\", role = c(\"ctb\"), comment = \"rjson option, hc_add_yAxis, and GH issues collaborator\"),\n  person(\"Paul\", \"Campbell\", role = c(\"ctb\"), comment = \"additional proxy methods\")\n  )",
-        "URL": "https://jkunst.com/highcharter/,\nhttps://github.com/jbkunst/highcharter",
+        "Description": "A wrapper for the 'Highcharts' library including\n    shortcut functions to plot R objects. 'Highcharts'\n    <https://www.highcharts.com/> is a charting library offering\n    numerous chart types with a simple configuration syntax.\n    The R wrapper is licensed under MIT. The bundled 'Highcharts' JavaScript\n    library is subject to separate license terms from 'Highsoft'.",
+        "Authors@R": "c(\n    person(\"Joshua\", \"Kunst\", role = c(\"aut\", \"cre\"), email = \"jbkunst@gmail.com\"),\n    person(\"Nuno\", \"Agostinho\", role = \"ctb\"),\n    person(\"Mauricio\", \"Vargas\", role = \"ctb\"),\n    person(\"Charlie Joey\", \"Hadley\", role = \"ctb\"),\n    person(\"Marc\", \"Kupietz\", role = \"ctb\")\n    )",
+        "URL": "https://jkunst.com/highcharter/, https://github.com/jbkunst/highcharter",
         "BugReports": "https://github.com/jbkunst/highcharter/issues",
         "License": "MIT + file LICENSE",
-        "RoxygenNote": "7.3.3",
+        "Roxygen": "list(markdown = TRUE)",
         "Encoding": "UTF-8",
-        "Depends": "R (>= 2.10)",
-        "Imports": "htmlwidgets, magrittr, purrr, rlist, assertthat, zoo, dplyr\n(>= 1.0.0), tibble (>= 1.1), stringr (>= 1.3.0), broom, xts,\nquantmod, tidyr, htmltools, jsonlite, igraph, lubridate, yaml,\nrlang (>= 0.1.1), rjson",
-        "Suggests": "knitr, rmarkdown, survival, ggplot2, httr, viridisLite,\nshiny, MASS, gapminder, forecast, geojsonio, testthat, covr,\nspelling",
+        "Depends": "R (>= 4.1.0)",
+        "Imports": "htmlwidgets,\npurrr,\nzoo,\ndplyr (>= 1.0.0),\ntibble (>= 1.1),\nstringr (>= 1.3.0),\nvctrs (>= 0.3.7),\nhtmltools,\njsonlite,\nyyjsonr (>= 0.1.22),\nyaml,\nrlang (>= 0.4.10)",
+        "VignetteBuilder": "knitr",
+        "Suggests": "seasonal,\nbslib,\nsass,\nknitr,\nrmarkdown,\nfontawesome,\nsurvival (>= 3.6-5),\nquantmod,\nxts,\nigraph,\nggplot2,\nhttr,\nviridisLite,\nshiny,\nMASS,\nforecast,\ngeojsonio,\ntestthat,\nwebshot2,\ncovr,\npalmerpenguins,\ntreemap,\ngapminder,\nforcats,\nreadr,\nhere,\nrvest,\nigraphdata,\nggplot2movies,\njanitor,\nspelling,",
         "LazyData": "true",
         "Language": "en-US",
-        "NeedsCompilation": "no",
-        "Packaged": "2026-04-21 18:09:41 UTC; kupietz",
-        "Author": "Joshua Kunst [aut, cre],\n  Nuno Agostinho [ctb] (hchart.survfit, densities and\n    hc_add_series_scatter),\n  Danton Noriega [ctb] (hcaes_),\n  Martin John Hadley [ctb] (hc_add_event_point improvement),\n  Eduardo Flores [ctb] (First version hc_add_series_df_tidy),\n  Dean Kilfoyle [ctb] (First version hc_add_series_boxplot),\n  Adline Dsilva [ctb] (First version Matrix heatmap),\n  Kamil Slowikowski [ctb] (ORCID:\n    <https://orcid.org/0000-0002-2843-6370>),\n  Christian Minich [ctb] (hcaes mutate_mapping improvement),\n  Jonathan Armond [ctb] (mutate_mapping bugfix),\n  David Breuer [ctb] (download_map_data quiet parameter),\n  Mauricio Vargas [ctb] (tests and gh-actions),\n  Michael Yan [ctb] (Motivational example for treemap/sunburst data\n    helper),\n  Bart Oortwijn [ctb] (rjson option, hc_add_yAxis, and GH issues\n    collaborator),\n  Paul Campbell [ctb] (additional proxy methods)",
+        "Config/Needs/website": "pkgdown, shinylive, nanonext, mapgl",
+        "Config/roxygen2/version": "8.1.1",
+        "RemoteType": "github",
+        "RemoteHost": "api.github.com",
+        "RemoteRepo": "highcharter",
+        "RemoteUsername": "jbkunst",
+        "RemoteRef": "dbc4897ab5a9974207f80fe59fc3115fbf3f9312",
+        "RemoteSha": "dbc4897ab5a9974207f80fe59fc3115fbf3f9312",
+        "GithubRepo": "highcharter",
+        "GithubUsername": "jbkunst",
+        "GithubRef": "dbc4897ab5a9974207f80fe59fc3115fbf3f9312",
+        "GithubSHA1": "dbc4897ab5a9974207f80fe59fc3115fbf3f9312",
+        "Author": "Joshua Kunst [aut, cre],\n  Nuno Agostinho [ctb],\n  Mauricio Vargas [ctb],\n  Charlie Joey Hadley [ctb],\n  Marc Kupietz [ctb]",
         "Maintainer": "Joshua Kunst <jbkunst@gmail.com>",
-        "Repository": "CRAN",
-        "Date/Publication": "2026-04-22 09:38:59 UTC",
-        "Built": "R 4.6.1; ; 2026-08-05 04:31:39 UTC; windows"
+        "Built": "R 4.5.0; ; 2026-11-20 21:24:57 UTC; unix"
       }
     },
     "highr": {
@@ -2215,6 +2224,36 @@
         "Archs": "x64"
       }
     },
+    "yyjsonr": {
+      "Source": "CRAN",
+      "Repository": "https://cloud.r-project.org",
+      "description": {
+        "Package": "yyjsonr",
+        "Type": "Package",
+        "Title": "Fast 'JSON', 'NDJSON' and 'GeoJSON' Parser and Generator",
+        "Version": "0.1.22",
+        "Authors@R": "c(\n    person(\"Mike\", \"Cheng\", role = c(\"aut\", \"cre\", 'cph'), \n    email = \"mikefc@coolbutuseless.com\"),\n    person(\"Yao\", \"Yuan\", role = c(\"aut\", \"cph\"), email = \"ibireme@gmail.com\", \n    comment=\"Author of bundled yyjson\"),\n    person(\"Murat\", \"Tasan\", role = c(\"ctb\"), \n    comment=\"'json_verbatim' handling\")\n    )",
+        "Maintainer": "Mike Cheng <mikefc@coolbutuseless.com>",
+        "Description": "A fast 'JSON' parser, generator and validator which converts 'JSON', \n    'NDJSON' (Newline Delimited 'JSON') and 'GeoJSON' (Geographic 'JSON') data \n    to/from R objects.  The standard R data types are \n    supported (e.g. logical, numeric, integer) with configurable handling of NULL \n    and NA values. Data frames, atomic vectors and lists are all supported as data \n    containers translated to/from 'JSON'.  'GeoJSON' data is read in as\n    'simple features' objects.\n    This implementation wraps the 'yyjson' 'C' library which \n    is available from <https://github.com/ibireme/yyjson>.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://github.com/coolbutuseless/yyjsonr,\nhttps://coolbutuseless.github.io/package/yyjsonr/",
+        "BugReports": "https://github.com/coolbutuseless/yyjsonr/issues",
+        "Encoding": "UTF-8",
+        "Language": "en-AU",
+        "RoxygenNote": "7.3.3",
+        "Suggests": "bit64, knitr, rmarkdown, jsonlite, testthat (>= 3.0.0)",
+        "Config/testthat/edition": "3",
+        "VignetteBuilder": "knitr",
+        "Copyright": "The included 'yyjson' code is Copyright (c) 2020 YaoYuan.\nSee 'COPYRIGHTS' for LICENSE for included code.",
+        "Depends": "R (>= 4.1.0)",
+        "NeedsCompilation": "yes",
+        "Packaged": "2026-04-05 05:10:02 UTC; mike",
+        "Author": "Mike Cheng [aut, cre, cph],\n  Yao Yuan [aut, cph] (Author of bundled yyjson),\n  Murat Tasan [ctb] ('json_verbatim' handling)",
+        "Repository": "CRAN",
+        "Date/Publication": "2026-04-05 06:40:02 UTC",
+        "Built": "R 4.5.0; x86_64-pc-linux-gnu; 2026-11-20 21:26:15 UTC; unix"
+      }
+    },
     "zoo": {
       "Source": "CRAN",
       "Repository": "https://cloud.r-project.org",
@@ -2245,7 +2284,7 @@
   },
   "files": {
     "app.R": {
-      "checksum": "5cb528b61b7b7709f4523b5af342e78d"
+      "checksum": "1eb6e2ecab62f3662a290d8b7cb4d395"
     },
     "credits.md": {
       "checksum": "3bc3e08fd06da6533daa2ec18d02552d"

@@ -132,10 +132,9 @@ sage_chart <- function(data, metric) {
   axis <- list(title = list(text = unname(metric_labels[[metric]])))
 
   highchart() |>
-    hc_add_dependency("modules/waterfall.js") |>
     hc_chart(type = "waterfall", spacingRight = 35) |>
     hc_xAxis(type = "category", categories = data$categories) |>
-    hc_yAxis_multiples(
+    hc_yAxis(
       axis,
       list(linkedTo = 0, opposite = TRUE, title = list(text = NULL))
     ) |>

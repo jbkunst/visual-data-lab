@@ -56,6 +56,11 @@ jobs:
             github::jbkunst/shinymodist@dev
             github::jbkunst/visual-data-lab/vdltheme@vdltheme-v0.0.5
 
+      - name: Install highcharter from its webR package repository
+        shell: Rscript {0}
+        run: |
+          install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", getOption("repos")))
+
       - name: Cache Shinylive assets and packages
         uses: actions/cache@v4
         with:

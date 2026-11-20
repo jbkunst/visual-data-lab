@@ -178,7 +178,7 @@ server <- function(input, output, session) {
     highchart() |>
       hc_chart(type = "column") |>
       hc_xAxis(categories = data$bin, title = list(text = variable_labels[[input$variable]])) |>
-      hc_yAxis_multiples(
+      hc_yAxis(
         list(title = list(text = "Clients"), min = 0),
         list(
           title = list(text = "Default rate"), min = 0, max = 100,
@@ -234,7 +234,6 @@ server <- function(input, output, session) {
   output$iv_plot <- renderHighchart({
     data <- profile()$values
     highchart() |>
-      hc_add_dependency("modules/waterfall.js") |>
       hc_chart(type = "waterfall") |>
       hc_xAxis(type = "category") |>
       hc_yAxis(title = list(text = "Information Value"), min = 0) |>

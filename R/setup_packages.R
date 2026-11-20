@@ -11,7 +11,6 @@ cran_packages <- c(
   "ggplot2",
   "glue",
   "here",
-  "highcharter",
   "htmltools",
   "imager",
   "jpeg",
@@ -68,4 +67,5 @@ github_packages <- c(
 )
 
 install.packages(cran_packages)
+install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", getOption("repos")))
 remotes::install_github(github_packages, upgrade = "never")

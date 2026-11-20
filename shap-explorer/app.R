@@ -330,7 +330,6 @@ server <- function(input, output, session) {
     chart <- isolate(chart_data())
 
     highchart() |>
-      hc_add_dependency("modules/waterfall.js") |>
       hc_chart(type = "waterfall") |>
       hc_xAxis(type = "category", plotBands = chart$waterfall_band) |>
       hc_yAxis(title = list(text = "Probability of default (%)")) |>

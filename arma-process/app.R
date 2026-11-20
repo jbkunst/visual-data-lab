@@ -119,6 +119,7 @@ server <- function(input, output, session) {
     hchart(
       df,
       "line",
+      hcaes(x = x, y = y),
       id = "ts",
       name = "Time series",
       marker = list(enabled = FALSE),
@@ -130,7 +131,7 @@ server <- function(input, output, session) {
         series = list(type = "line"),
         xAxis = list(labels = list(enabled = FALSE))
       ) |>
-      hc_yAxis_multiples(
+      hc_yAxis(
         # default axis
         list(title = list(text = "")),
         list(
@@ -138,10 +139,10 @@ server <- function(input, output, session) {
           linkedTo = 0,
           opposite = TRUE,
           tickPositioner = JS(
-            "function(min,max){
-               var data = this.chart.yAxis[0].series[0].processedYData;
-               //last point
-               return [Math.round(1000 * data[data.length-1])/1000];
+            "function() {
+               const values = this.chart.get('ts').getColumn('y', true);
+               const last = values[values.length - 1];
+               return Number.isFinite(last) ? [Math.round(last * 1000) / 1000] : [];
             }"
           )
         )

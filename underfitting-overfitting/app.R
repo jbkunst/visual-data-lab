@@ -8,8 +8,6 @@ library(markdown)
 library(shinyWidgets)
 library(vdltheme)
 
-options(highcharter.google_fonts = FALSE)
-
 # theme options -----------------------------------------------------------
 apptheme <- theme_vdl()
 

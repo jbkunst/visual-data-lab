@@ -174,6 +174,14 @@ the export blindly.
 
 ## Shared Theme and Visual Style
 
+For local Shinylive exports, install highcharter from the same R-universe
+repository as the Pages workflow. Shinylive uses the installed package's
+repository to find its WebAssembly binary.
+
+```r
+install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", getOption("repos")))
+```
+
 Apps use the shared `vdltheme` package and its bundled IBM Plex Sans font:
 
 ```r

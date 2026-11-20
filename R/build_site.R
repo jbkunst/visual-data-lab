@@ -294,7 +294,20 @@ shinylive_pool_stats <- shinylive_pools |>
   mutate(
     package_names = map(
       .data$shinylive_pool,
-      ~ names(readRDS(path("docs/live", .x, "shinylive/webr/packages/metadata.rds")))
+      function(pool) {
+        packages <- readRDS(path("docs/live", pool, "shinylive/webr/packages/metadata.rds"))
+        if (pool == "standard" || "highcharter" %in% names(packages)) {
+          chart <- packages[["highcharter"]]
+          installed <- packageDescription("highcharter")
+          expected <- paste0("https://jbkunst.r-universe.dev::highcharter@", installed$RemoteSha)
+          if (!isTRUE(chart$cached) || !isTRUE(packages[["yyjsonr"]]$cached) ||
+              !identical(as.character(chart$ref), expected) ||
+              !identical(chart$version, installed$Version)) {
+            stop("Missing or outdated highcharter webR export in the ", pool, " pool.")
+          }
+        }
+        names(packages)
+      }
     ),
     packages = map_int(.data$package_names, length),
     bytes = map_dbl(
