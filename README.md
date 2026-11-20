@@ -179,7 +179,7 @@ repository as the Pages workflow. Shinylive uses the installed package's
 repository to find its WebAssembly binary.
 
 ```r
-install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", getOption("repos")))
+install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
 Apps use the shared `vdltheme` package and its bundled IBM Plex Sans font:

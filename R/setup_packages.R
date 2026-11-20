@@ -67,5 +67,5 @@ github_packages <- c(
 )
 
 install.packages(cran_packages)
-install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", getOption("repos")))
+install.packages("highcharter", repos = c("https://jbkunst.r-universe.dev", "https://cloud.r-project.org"))
 remotes::install_github(github_packages, upgrade = "never")
